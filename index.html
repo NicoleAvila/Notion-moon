@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Glow</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Shield</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,36 +7,39 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* Base esférica escura com o halo/glow místico externo */
+/* Base esférica com os halos de luz mística */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
-    background: #252321; /* Um cinza-café bem escuro para o lado oculto da lua */
+    background: #1C1C1C;
     position: relative;
     transition: 0.5s;
     box-shadow: 
-        0 0 15px 1px rgba(212, 196, 168, 0.25), 
-        0 0 30px 4px rgba(212, 196, 168, 0.1),
-        inset 0 0 15px rgba(0,0,0,0.8);
+        0 0 15px 2px rgba(212, 196, 168, 0.25), 
+        0 0 30px 4px rgba(212, 196, 168, 0.1);
 }
 
-/* Camada da Sombra Dinâmica */
-.moon-light, .moon-light::after {
-    content: '';
+/* O corpo brilhante agora usa a máscara geométrica controlada por JS */
+.moon-light {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    background: radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 65%, #A8967A 100%);
     border-radius: 50%;
-    transition: transform 0.5s, background-color 0.5s;
+    transition: clip-path 0.4s ease;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
 }
 
-/* O preenchimento principal do luar bronze */
-.moon-light {
-    background-color: #D4C4A8;
-    background: radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%);
+/* Um fundo fantasma sutil para o lado escuro da lua (Luz Cinérea opcional) */
+.moon-dark-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #252422 0%, #151413 80%);
+    opacity: 0.5;
 }
 
 .phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
@@ -52,6 +55,7 @@ footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration
         <div class="h">LUNAR PHASE</div>
         <div class="moon-container">
             <div class="moon-sphere" id="moon">
+                <div class="moon-dark-bg"></div>
                 <div class="moon-light" id="light"></div>
             </div>
         </div>
@@ -101,33 +105,35 @@ function updateMoon() {
     phaseText.innerText = phaseName;
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
-    // Geometria tridimensional da elipse baseada na órbita síncrona
-    let pct = (age / 29.53);
-    
-    // Inversão do container completo para o Hemisfério Sul
+    let pct = age / 29.53;
+
+    // Inversão física de hemisfério aplicada com precisão
     moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
 
-    // Lógica robusta de máscara de preenchimento (Glow Sólido Preenchido)
-    if (pct < 0.25) {
-        // Crescente Fina (Côncava) - De 0% a 50% da metade
-        light.style.transform = `scaleX(${(1 - pct * 4)})`;
-        light.style.background = "#252321"; /* Sombra cobre o centro, restando a foice bronze nas bordas */
-        moon.style.backgroundColor = "#D4C4A8";
-    } else if (pct < 0.50) {
-        // Crescente Cheia (Gibosa) - De 50% a 100% da metade
-        light.style.transform = `scaleX(${(pct - 0.25) * 4})`;
-        light.style.background = "radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%)";
-        moon.style.backgroundColor = "#252321";
-    } else if (pct < 0.75) {
-        // Minguante Gibosa
-        light.style.transform = `scaleX(${(1 - (pct - 0.5) * 4)})`;
-        light.style.background = "radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%)";
-        moon.style.backgroundColor = "#252321";
+    // MÁSCARA MATEMÁTICA VIA CLIP-PATH (Desenha curvas puras baseadas na porcentagem de luz)
+    let rx = 0;
+    if (pct <= 0.5) {
+        // Fase Crescente: a curva da sombra se move da direita para a esquerda
+        rx = (1 - (pct * 4)) * 50; 
+        if (pct <= 0.25) {
+            // Foice fina côncava
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${Math.abs(rx)},50 0 1,0 50,0')`;
+        } else {
+            // Arredondando para Gibosa Crescente
+            rx = ((pct - 0.25) * 4) * 50;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${rx},50 0 1,1 50,0')`;
+        }
     } else {
-        // Minguante Fina (Côncava)
-        light.style.transform = `scaleX(${((pct - 0.75) * 4)})`;
-        light.style.background = "#252321";
-        moon.style.backgroundColor = "#D4C4A8";
+        // Fase Minguante
+        if (pct <= 0.75) {
+            // Gibosa Minguante
+            rx = (1 - (pct - 0.5) * 4) * 50;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${rx},50 0 1,0 50,0')`;
+        } else {
+            // Minguante Fina côncava
+            rx = ((pct - 0.75) * 4) * 50;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${Math.abs(rx)},50 0 1,1 50,0')`;
+        }
     }
 }
 
