@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Terminator</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Terminator Fix</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,21 +7,25 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* Esfera com brilho atmosférico externo */
+/* A esfera principal ganha o isolamento de renderização definitivo */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
     background: #1C1C1C;
     position: relative;
-    overflow: hidden;
-    transition: 0.5s;
+    
+    /* O TRUQUE DE MESTRE: Força o navegador a cortar qualquer borrão que saia do círculo */
+    overflow: hidden !important;
+    backface-visibility: hidden;
+    -webkit-mask-image: -webkit-radial-gradient(white, black); /* Garante o comportamento em navegadores mobile */
+    
     box-shadow: 
         0 0 15px 2px rgba(212, 196, 168, 0.2), 
         0 0 30px 4px rgba(212, 196, 168, 0.08);
 }
 
-/* Fundo da textura real da Lua */
+/* Fundo com a textura fotográfica real da Lua */
 .moon-light {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -32,21 +36,20 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
 }
 
-/* O SEGREDO DO REALISMO: Uma cortina de sombra que usa blur (desfoque) óptico */
+/* Cortina de sombra esfumaçada (agora perfeitamente enjaulada dentro da Lua) */
 .moon-terminator {
     position: absolute;
     top: -5%;
     width: 110%;
     height: 110%;
-    background: #1C1C1C; /* Cor idêntica ao fundo do Notion */
+    background: #1C1C1C;
     transition: left 0.4s ease, width 0.4s ease, border-radius 0.4s ease;
-    /* Filtro de desfoque gaussiano para suavizar a transição da luz na textura */
-    filter: blur(4px); 
+    filter: blur(4px); /* Mantém o terminador difuso realista */
     z-index: 3;
     pointer-events: none;
 }
 
-/* Sutil fundo acinzentado para o lado escuro não sumir no breu total (Luz Cinérea) */
+/* Sutil fundo acinzentado para o lado oculto (Luz Cinérea) */
 .moon-dark-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -115,19 +118,15 @@ function updateMoon() {
 
     let pct = age / 29.53;
 
-    // Ajuste de simetria óptica do Hemisfério Sul
     moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
 
-    // TRANSLADO DA PENUMBRA SUAVE (Esfumaça as bordas em vez de cortar)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            // Crescente Fina Côncava
-            let shift = (pct * 4) * 50; // Move de 0% a 50%
+            let shift = (pct * 4) * 50;
             shadow.style.left = (shift - 5) + "%";
             shadow.style.width = "110%";
             shadow.style.borderRadius = "50%";
         } else {
-            // Gibosa Crescente
             let shift = ((pct - 0.25) * 4) * 50;
             shadow.style.left = "-60%";
             shadow.style.width = (110 - shift) + "%";
@@ -135,13 +134,11 @@ function updateMoon() {
         }
     } else {
         if (pct <= 0.75) {
-            // Gibosa Minguante
             let shift = ((pct - 0.5) * 4) * 50;
             shadow.style.left = (-60 + shift) + "%";
             shadow.style.width = "60%";
             shadow.style.borderRadius = "50% 0 0 50%";
         } else {
-            // Minguante Fina Côncava
             let shift = ((pct - 0.75) * 4) * 50;
             shadow.style.left = "45%";
             shadow.style.width = (10 + shift) + "%";
