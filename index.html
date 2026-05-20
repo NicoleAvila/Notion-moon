@@ -1,15 +1,17 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Moon Phase</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Moon Sticker</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
-#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
-#c{width:100%!important;background:#2D241E!important;border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;padding-bottom:12cqi}
-.h{background:#3C2F2F!important;color:#D4C4A8!important;padding:3cqi 12cqi!important;height:10cqi!important;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi}
 
-.moon-container{display:flex;justify-content:center;align-items:center;padding:6cqi 0 2cqi 0}
+#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
+#c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
+
+.h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
+
+.moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
 .moon-sphere{
-    width:32cqi;
-    height:32cqi;
+    width:34cqi;
+    height:34cqi;
     border-radius:50%;
     background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
     background-size: cover;
@@ -17,7 +19,8 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     position:relative;
     overflow:hidden;
     transition: 0.5s;
-    box-shadow: 0 0 15px rgba(212, 196, 168, 0.2), inset 0 0 10px rgba(0,0,0,0.5);
+    border: 2px solid #D4C4A8;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
 }
 
 .moon-light{
@@ -29,21 +32,19 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     background:#1C1C1C;
     border-radius:50%;
     transition: 0.5s;
-    opacity: 0.88;
-    filter: blur(1px);
 }
 
-.phase-name{color:#D4C4A8;font-size:6cqi;font-weight:700;margin-top:2cqi}
+.phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:2cqi}
 .hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
 
 #flip-btn{background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi;transition:0.3s}
 #flip-btn:hover{opacity:1;color:#D4C4A8}
 
-footer{text-align:center;padding-top:1.5cqi}footer a{color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6;transition:.3s}footer a:hover{opacity:1;color:#D4C4A8}
+footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6;transition:.3s}footer a:hover{opacity:1;color:#D4C4A8}
 </style></head><body>
 <div id="wrapper">
     <div id="c">
-        <div class="h"><span>&nbsp;</span><span>LUNAR PHASE</span><span>&nbsp;</span></div>
+        <div class="h">LUNAR PHASE</div>
         <div class="moon-container">
             <div class="moon-sphere" id="moon"><div class="moon-light" id="light"></div></div>
         </div>
@@ -102,26 +103,22 @@ function updateMoon() {
             light.style.background = "#1C1C1C";
             light.style.left = "50%";
             light.style.width = (100 - (illumination * 2)) + "%";
-            light.style.borderRadius = "0 50% 50% 0 / 0 50% 50% 0";
         } else {
             light.style.background = "transparent";
-            light.style.boxShadow = "inset " + ((illumination - 50) * 0.6) + "cqi 0 10px #1C1C1C";
+            light.style.boxShadow = "inset " + ((illumination - 50) * 0.6) + "cqi 0 0 #1C1C1C";
             light.style.left = "0";
             light.style.width = "50%";
-            light.style.borderRadius = "50% 0 0 50% / 50% 0 0 50%";
         }
     } else {
         if (illumination >= 50) {
             light.style.background = "transparent";
-            light.style.boxShadow = "inset -" + ((illumination - 50) * 0.6) + "cqi 0 10px #1C1C1C";
+            light.style.boxShadow = "inset -" + ((illumination - 50) * 0.6) + "cqi 0 0 #1C1C1C";
             light.style.left = "50%";
             light.style.width = "50%";
-            light.style.borderRadius = "0 50% 50% 0 / 0 50% 50% 0";
         } else {
             light.style.background = "#1C1C1C";
             light.style.left = "0";
             light.style.width = (100 - (illumination * 2)) + "%";
-            light.style.borderRadius = "50% 0 0 50% / 50% 0 0 50%";
         }
     }
 }
