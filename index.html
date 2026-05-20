@@ -1,10 +1,8 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Moon Sticker</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Moon Glow</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
-
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
 #c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
-
 .h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
@@ -13,14 +11,14 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     width:34cqi;
     height:34cqi;
     border-radius:50%;
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(circle at 50% 50%, #202020 0%, #151515 70%, #121212 100%);
     position:relative;
     overflow:hidden;
     transition: 0.5s;
-    border: 2px solid #D4C4A8;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    box-shadow: 
+        0 0 12px 2px rgba(212, 196, 168, 0.18), 
+        0 0 25px 6px rgba(212, 196, 168, 0.08),
+        inset -3px -3px 10px rgba(0,0,0,0.8);
 }
 
 .moon-light{
@@ -29,12 +27,24 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     left:0;
     width:100%;
     height:100%;
-    background:#1C1C1C;
+    background: radial-gradient(circle at 45% 45%, #EFE7D8 0%, #D4C4A8 55%, #A8967A 100%);
     border-radius:50%;
     transition: 0.5s;
+    box-shadow: inset 2px 2px 8px rgba(255,255,255,0.4);
 }
 
-.phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:2cqi}
+.moon-shadow-mask{
+    position:absolute;
+    top:-5%;
+    left:0;
+    width:100%;
+    height:110%;
+    background:#1C1C1C;
+    transition: 0.5s;
+    filter: blur(1.5px);
+}
+
+.phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
 .hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
 
 #flip-btn{background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi;transition:0.3s}
@@ -46,7 +56,10 @@ footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration
     <div id="c">
         <div class="h">LUNAR PHASE</div>
         <div class="moon-container">
-            <div class="moon-sphere" id="moon"><div class="moon-light" id="light"></div></div>
+            <div class="moon-sphere" id="moon">
+                <div class="moon-light" id="light"></div>
+                <div class="moon-shadow-mask" id="shadow"></div>
+            </div>
         </div>
         <div class="phase-name" id="phase-text">Carregando...</div>
         <div class="hemisphere-badge" id="hemisphere-text">Hemisfério Sul</div>
@@ -76,7 +89,7 @@ function getMoonAge() {
 function updateMoon() {
     const age = getMoonAge();
     const moon = document.getElementById("moon");
-    const light = document.getElementById("light");
+    const shadow = document.getElementById("shadow");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
 
@@ -92,41 +105,4 @@ function updateMoon() {
     else phaseName = "Lua Nova";
 
     phaseText.innerText = phaseName;
-    hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
-
-    let illumination = (age <= 14.77) ? (age / 14.77) * 100 : (1 - ((age - 14.77) / 14.77)) * 100;
-
-    moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
-
-    if (age <= 14.77) {
-        if (illumination <= 50) {
-            light.style.background = "#1C1C1C";
-            light.style.left = "50%";
-            light.style.width = (100 - (illumination * 2)) + "%";
-        } else {
-            light.style.background = "transparent";
-            light.style.boxShadow = "inset " + ((illumination - 50) * 0.6) + "cqi 0 0 #1C1C1C";
-            light.style.left = "0";
-            light.style.width = "50%";
-        }
-    } else {
-        if (illumination >= 50) {
-            light.style.background = "transparent";
-            light.style.boxShadow = "inset -" + ((illumination - 50) * 0.6) + "cqi 0 0 #1C1C1C";
-            light.style.left = "50%";
-            light.style.width = "50%";
-        } else {
-            light.style.background = "#1C1C1C";
-            light.style.left = "0";
-            light.style.width = (100 - (illumination * 2)) + "%";
-        }
-    }
-}
-
-function toggleHemisphere() {
-    isSouthern = !isSouthern;
-    updateMoon();
-}
-
-updateMoon();
-</script></body></html>
+    hemiText.innerText = isSouthern ?
