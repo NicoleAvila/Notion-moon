@@ -7,19 +7,22 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
+/* Base esférica escura com o halo/glow místico externo */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
-    background: #1C1C1C;
+    background: #252321; /* Um cinza-café bem escuro para o lado oculto da lua */
     position: relative;
     transition: 0.5s;
     box-shadow: 
-        0 0 15px 1px rgba(212, 196, 168, 0.22), 
-        0 0 30px 4px rgba(212, 196, 168, 0.08);
+        0 0 15px 1px rgba(212, 196, 168, 0.25), 
+        0 0 30px 4px rgba(212, 196, 168, 0.1),
+        inset 0 0 15px rgba(0,0,0,0.8);
 }
 
-.moon-sphere::before, .moon-light {
+/* Camada da Sombra Dinâmica */
+.moon-light, .moon-light::after {
     content: '';
     position: absolute;
     top: 0;
@@ -27,19 +30,13 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    transition: 0.5s;
+    transition: transform 0.5s, background-color 0.5s;
 }
 
-.moon-sphere::before {
-    background: radial-gradient(circle at 50% 50%, #252525 0%, #151515 70%, #1C1C1C 100%);
-    z-index: 1;
-}
-
+/* O preenchimento principal do luar bronze */
 .moon-light {
-    background: radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 65%, #A8967A 100%);
-    z-index: 2;
-    box-shadow: inset 0 0 10px rgba(255,255,255,0.4);
-    transform-origin: center;
+    background-color: #D4C4A8;
+    background: radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%);
 }
 
 .phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
@@ -104,22 +101,34 @@ function updateMoon() {
     phaseText.innerText = phaseName;
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
-    let rad = (age / 29.53) * 2 * Math.PI;
-    let xX = Math.cos(rad);
-
-    light.style.transform = `scaleX(${Math.abs(xX)})`;
-
-    if (age <= 7.38 || age >= 22.14) {
-        light.style.zIndex = 1;
-        moon.style.backgroundColor = "#D4C4A8";
-        light.style.background = "#1C1C1C"; 
-    } else {
-        light.style.zIndex = 2;
-        moon.style.backgroundColor = "#1C1C1C";
-        light.style.background = "radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 65%, #A8967A 100%)";
-    }
-
+    // Geometria tridimensional da elipse baseada na órbita síncrona
+    let pct = (age / 29.53);
+    
+    // Inversão do container completo para o Hemisfério Sul
     moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
+
+    // Lógica robusta de máscara de preenchimento (Glow Sólido Preenchido)
+    if (pct < 0.25) {
+        // Crescente Fina (Côncava) - De 0% a 50% da metade
+        light.style.transform = `scaleX(${(1 - pct * 4)})`;
+        light.style.background = "#252321"; /* Sombra cobre o centro, restando a foice bronze nas bordas */
+        moon.style.backgroundColor = "#D4C4A8";
+    } else if (pct < 0.50) {
+        // Crescente Cheia (Gibosa) - De 50% a 100% da metade
+        light.style.transform = `scaleX(${(pct - 0.25) * 4})`;
+        light.style.background = "radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%)";
+        moon.style.backgroundColor = "#252321";
+    } else if (pct < 0.75) {
+        // Minguante Gibosa
+        light.style.transform = `scaleX(${(1 - (pct - 0.5) * 4)})`;
+        light.style.background = "radial-gradient(circle at 50% 50%, #FFFDF9 0%, #D4C4A8 70%, #A8967A 100%)";
+        moon.style.backgroundColor = "#252321";
+    } else {
+        // Minguante Fina (Côncava)
+        light.style.transform = `scaleX(${((pct - 0.75) * 4)})`;
+        light.style.background = "#252321";
+        moon.style.backgroundColor = "#D4C4A8";
+    }
 }
 
 function toggleHemisphere() {
