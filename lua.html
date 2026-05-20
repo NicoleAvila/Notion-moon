@@ -3,18 +3,15 @@
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
 #c{width:100%!important;background:#2D241E!important;border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-align:center;padding-bottom:12cqi}
-.h{background:#3C2F2F!important;color:#D4C4A8!important;padding:3cqi 12cqi!important;height:10cqi!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:5.5cqi;letter-spacing:1px}
+.h{background:#3C2F2F!important;color:#D4C4A8!important;padding:3cqi 12cqi!important;height:10cqi!important;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi}
 
-/* ESTILIZAÇÃO DA LUA (ASTRONOMIA VISUAL) */
 .moon-container{display:flex;justify-content:center;align-items:center;padding:6cqi 0 2cqi 0}
-.moon-sphere{width:32cqi;height:32cqi;border-radius:50%;background:#1C1C1C;box-shadow:inset 0 0 10px rgba(0,0,0,0.8);position:relative;overflow:hidden;transition:0.5s}
-.moon-light{position:absolute;top:0;left:0;width:100%;height:100%;background:#D4C4A8;border-radius:50%;box-shadow:0 0 15px rgba(212,196,168,0.4);transition:0.5s}
+.moon-sphere{width:32cqi;height:32cqi;border-radius:50%;background:#1C1C1C;position:relative;overflow:hidden;transition:0.5s}
+.moon-light{position:absolute;top:0;left:0;width:100%;height:100%;background:#D4C4A8;border-radius:50%;transition:0.5s}
 
-/* Nome da Fase e Detalhes */
-.phase-name{color:#D4C4A8;font-size:6cqi;font-weight:700;margin-top:2cqi;text-transform:capitalize}
+.phase-name{color:#D4C4A8;font-size:6cqi;font-weight:700;margin-top:2cqi}
 .hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
 
-/* Botão de inversão manual (caso queira testar o outro hemisfério) */
 #flip-btn{background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi;transition:0.3s}
 #flip-btn:hover{opacity:1;color:#D4C4A8}
 
@@ -22,117 +19,94 @@ footer{text-align:center;padding-top:1.5cqi}footer a{color:#8C7355;text-decorati
 </style></head><body>
 <div id="wrapper">
     <div id="c">
-        <div class="h">LUNAR PHASE</div>
+        <div class="h"><span>&nbsp;</span><span>LUNAR PHASE</span><span>&nbsp;</span></div>
         <div class="moon-container">
             <div class="moon-sphere" id="moon"><div class="moon-light" id="light"></div></div>
         </div>
-        <div class="phase-name" id="phase-text">Loading...</div>
-        <div class="hemisphere-badge" id="hemisphere-text">Southern Hemisphere</div>
-        <button id="flip-btn" onclick="toggleHemisphere()">Switch Hemisphere</button>
+        <div class="phase-name" id="phase-text">Carregando...</div>
+        <div class="hemisphere-badge" id="hemisphere-text">Hemisfério Sul</div>
+        <button id="flip-btn" onclick="toggleHemisphere()">Inverter Hemisfério</button>
     </div>
     <footer><a href="https://github.com/NicoleAvila">nikki.me</a></footer>
 </div>
 
 <script>
-// Lógica matemática para calcular a fase da lua aproximada (Algoritmo de Conway)
-function getMoonPhase(year, month, day) {
-    let r = year % 100;
-    r %= 19;
-    if (r > 9) r -= 19;
-    r = ((r * 11) % 30) + parseInt(month) + parseInt(day);
-    if (month < 3) r += 2;
-    r -= ((year < 2000) ? 4 : 8.3);
-    r = Math.floor(r + 0.5) % 30;
-    return (r < 0) ? r + 30 : r;
+let isSouthern = true;
+
+function getMoonAge() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+
+    if (m <= 2) { y--; m += 12; }
+    let a = Math.floor(y / 100);
+    let b = Math.floor(a / 4);
+    let c = 2 - a + b;
+    let e = Math.floor(365.25 * (y + 4716));
+    let f = Math.floor(30.6001 * (m + 1));
+    let jd = c + d + e + f - 1524.5;
+    
+    let daysSinceNew = jd - 2451550.1; 
+    let newMoons = daysSinceNew / 29.530588853;
+    let cyclePct = newMoons - Math.floor(newMoons);
+    return cyclePct * 29.53;
 }
 
-const phasesSouthern = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Third Quarter", "Waning Crescent"];
-let isSouthern = true; // Padrão: Nosso hemisfério (Sul)
-
 function updateMoon() {
-    const today = new Date();
-    const age = getMoonPhase(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    
+    const age = getMoonAge();
     const moon = document.getElementById("moon");
     const light = document.getElementById("light");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
 
-    // Mapeia os 30 dias do ciclo para as 8 fases principais
-    let phaseIndex = 0;
-    if (age === 0 || age === 29) phaseIndex = 0;
-    else if (age > 0 && age < 7) phaseIndex = 1;
-    else if (age === 7) phaseIndex = 2;
-    else if (age > 7 && age < 15) phaseIndex = 3;
-    else if (age === 15) phaseIndex = 4;
-    else if (age > 15 && age < 22) phaseIndex = 5;
-    else if (age === 22) phaseIndex = 6;
-    else if (age > 22 && age < 29) phaseIndex = 7;
+    let phaseName = "";
+    if (age < 1.84) phaseName = "Lua Nova";
+    else if (age < 5.54) phaseName = "Crescente Côncava";
+    else if (age < 9.23) phaseName = "Quarto Crescente";
+    else if (age < 12.92) phaseName = "Gibosa Crescente";
+    else if (age < 16.61) phaseName = "Lua Cheia";
+    else if (age < 20.31) phaseName = "Gibosa Minguante";
+    else if (age < 24.00) phaseName = "Quarto Minguante";
+    else if (age < 27.69) phaseName = "Minguante Côncava";
+    else phaseName = "Lua Nova";
 
-    // Tradução e Textos adaptados
-    const phaseNames = {
-        "New Moon": "Lua Nova",
-        "Waxing Crescent": "Crescente Côncava",
-        "First Quarter": "Quarto Crescente",
-        "Waxing Gibbous": "Gibosa Crescente", // Sua personagem mãe do grupo!
-        "Full Moon": "Lua Cheia",
-        "Waning Gibbous": "Gibosa Minguante",
-        "Third Quarter": "Quarto Minguante",
-        "Waning Crescent": "Minguante Côncava"
-    };
-
-    let currentPhaseEng = phasesSouthern[phaseIndex];
-    
-    // Se mudarmos para o hemisfério Norte no botão, invertemos os nomes das crescentes/minguantes
-    if (!isSouthern) {
-        if (currentPhaseEng.includes("Waxing")) currentPhaseEng = currentPhaseEng.replace("Waxing", "Waning");
-        else if (currentPhaseEng.includes("Waning")) currentPhaseEng = currentPhaseEng.replace("Waning", "Waxing");
-    }
-
-    phaseText.innerText = phaseNames[phasesSouthern[phaseIndex]];
+    phaseText.innerText = phaseName;
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
-    // --- CÁLCULO DO SHADOW/LIGHT VIA CSS DINÂMICO ---
-    let pct = (age / 30) * 100;
-    
-    // O truque físico: Se for hemisfério Sul, nós espelhamos horizontalmente o elemento visual da lua
-    if (isSouthern) {
-        moon.style.transform = "scaleX(-1)";
+    let illumination = 0;
+    if (age <= 14.77) {
+        illumination = (age / 14.77) * 100;
     } else {
-        moon.style.transform = "scaleX(1)";
+        illumination = (1 - ((age - 14.77) / 14.77)) * 100;
     }
 
-    // Renderização da sombra esférica baseada na idade da lua
-    if (age <= 15) {
-        // Crescendo (0% a 50% iluminada)
-        let shadowPct = (1 - (age / 7.5)) * 100;
-        if(age <= 7.5) {
+    moon.style.transform = isSouthern ? "scaleX(-1)" : "scaleX(1)";
+
+    if (age <= 14.77) {
+        if (illumination <= 50) {
             light.style.background = "#1C1C1C";
             moon.style.backgroundColor = "#D4C4A8";
             light.style.left = "50%";
-            light.style.width = shadowPct + "%";
-            light.style.transform = "translateX(-50%)";
-        } else {
-            light.style.background = "#D4C4A8";
-            moon.style.backgroundColor = "#1C1C1C";
-            light.style.left = "50%";
-            light.style.width = (100 - shadowPct) + "%";
-            light.style.transform = "translateX(-50%)";
-        }
-    } else {
-        // Minguando (50% a 0% iluminada)
-        let shadowPct = (1 - ((age - 15) / 7.5)) * 100;
-        if(age <= 22.5) {
-            light.style.background = "#1C1C1C";
-            moon.style.backgroundColor = "#D4C4A8";
-            light.style.left = "0";
-            light.style.width = (100 - shadowPct) + "%";
+            light.style.width = (100 - (illumination * 2)) + "%";
             light.style.transform = "none";
         } else {
             light.style.background = "#D4C4A8";
             moon.style.backgroundColor = "#1C1C1C";
             light.style.left = "0";
-            light.style.width = shadowPct + "%";
+            light.style.width = (((illumination - 50) * 2) + 50) + "%";
+            light.style.transform = "none";
+        }
+    } else {
+        if (illumination >= 50) {
+            light.style.background = "#D4C4A8";
+            moon.style.backgroundColor = "#1C1C1C";
+            light.style.left = "50%";
+            light.style.width = (((100 - illumination) * 2)) + "%";
+            light.style.transform = "none";
+        } else {
+            light.style.background = "#1C1C1C";
+            moon.style.backgroundColor = "#D4C4A8";
+            light.style.left = "0";
+            light.style.width = (100 - (illumination * 2)) + "%";
             light.style.transform = "none";
         }
     }
