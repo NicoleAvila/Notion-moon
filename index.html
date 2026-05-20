@@ -1,69 +1,3 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Perfection</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
-html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
-#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
-#c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
-.h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
-
-.moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
-
-/* Esfera principal */
-.moon-sphere {
-    width: 34cqi;
-    height: 34cqi;
-    border-radius: 50%;
-    background: #151413; /* O lado escuro da lua de forma fixa */
-    position: relative;
-    overflow: hidden;
-    box-shadow: 
-        0 0 15px 2px rgba(212, 196, 168, 0.2), 
-        0 0 30px 4px rgba(212, 196, 168, 0.08);
-}
-
-/* Textura real da Lua que receberá o corte suave da máscara pelo JS */
-.moon-light {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
-    background-size: cover;
-    background-position: center;
-    border-radius: 50%;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
-    /* Transição suave para quando a fase mudar */
-    transition: -webkit-mask-image 0.4s ease, mask-image 0.4s ease;
-}
-
-/* Fundo sutil para simular a Luz Cinérea */
-.moon-dark-bg {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, #22201E 0%, #151413 80%);
-    opacity: 0.4;
-}
-
-.phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
-.hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
-#flip-btn{background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi}
-#flip-btn:hover{opacity:1;color:#D4C4A8}
-footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6}
-</style></head><body>
-<div id="wrapper">
-    <div id="c">
-        <div class="h">LUNAR PHASE</div>
-        <div class="moon-container">
-            <div class="moon-sphere" id="moon">
-                <div class="moon-dark-bg"></div>
-                <div class="moon-light" id="light"></div>
-            </div>
-        </div>
-        <div class="phase-name" id="phase-text">Carregando...</div>
-        <div class="hemisphere-badge" id="hemisphere-text">Hemisfério Sul</div>
-        <button id="flip-btn" onclick="toggleHemisphere()">Inverter Hemisfério</button>
-    </div>
-    <footer><a href="https://github.com/NicoleAvila">nikki.me</a></footer>
-</div>
-
 <script>
 let isSouthern = true;
 
@@ -98,44 +32,44 @@ function updateMoon() {
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
     let pct = age / 29.53;
-
-    // CÁLCULO DA MÁSCARA RADIAL DE OPACIDADE (Sem mover elementos, sem vazar manchas)
-    // O blur de 8% cria o terminador perfeitamente difuso nas crateras
     let maskString = "";
 
+    // MÁSCARA RADIAL ELÍPTICA: Controla a curvatura tridimensional exata do terminador
     if (isSouthern) {
-        // Hemisfério Sul: Crescente ilumina a ESQUERDA (Formato de C)
         if (pct <= 0.25) {
+            // Crescente Fina (Foice em formato de C)
             let p = Math.floor(pct * 4 * 100);
-            maskString = `linear-gradient(to left, transparent ${100 - p}%, black ${108 - p}%)`;
+            maskString = `radial-gradient(ellipse ${100 - p}% 100% at 0% 50%, black 92%, transparent 100%)`;
         } else if (pct <= 0.50) {
+            // Gibosa Crescente (Engordando até encher)
             let p = Math.floor((pct - 0.25) * 4 * 100);
-            maskString = `linear-gradient(to right, black ${p}%, transparent ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${p}% 100% at 0% 50%, transparent ${p - 8}%, black ${p}%)`;
         } else if (pct <= 0.75) {
+            // Gibosa Minguante
             let p = Math.floor((pct - 0.50) * 4 * 100);
-            maskString = `linear-gradient(to right, transparent ${p}%, black ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${100 - p}% 100% at 100% 50%, transparent ${(100 - p) - 8}%, black ${100 - p}%)`;
         } else {
+            // Minguante Fina
             let p = Math.floor((pct - 0.75) * 4 * 100);
-            maskString = `linear-gradient(to left, black ${p}%, transparent ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${p}% 100% at 100% 50%, black 92%, transparent 100%)`;
         }
     } else {
-        // Hemisfério Norte: Crescente ilumina a DIREITA (Formato de D)
+        // Hemisfério Norte (Inversão dos polos elípticos de foco)
         if (pct <= 0.25) {
             let p = Math.floor(pct * 4 * 100);
-            maskString = `linear-gradient(to right, transparent ${100 - p}%, black ${108 - p}%)`;
+            maskString = `radial-gradient(ellipse ${100 - p}% 100% at 100% 50%, black 92%, transparent 100%)`;
         } else if (pct <= 0.50) {
             let p = Math.floor((pct - 0.25) * 4 * 100);
-            maskString = `linear-gradient(to left, black ${p}%, transparent ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${p}% 100% at 100% 50%, transparent ${p - 8}%, black ${p}%)`;
         } else if (pct <= 0.75) {
             let p = Math.floor((pct - 0.50) * 4 * 100);
-            maskString = `linear-gradient(to left, transparent ${p}%, black ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${100 - p}% 100% at 0% 50%, transparent ${(100 - p) - 8}%, black ${100 - p}%)`;
         } else {
             let p = Math.floor((pct - 0.75) * 4 * 100);
-            maskString = `linear-gradient(to right, black ${p}%, transparent ${p + 8}%)`;
+            maskString = `radial-gradient(ellipse ${p}% 100% at 0% 50%, black 92%, transparent 100%)`;
         }
     }
 
-    // Aplica a máscara estável direto na folha de estilo do elemento iluminado
     light.style.webkitMaskImage = maskString;
     light.style.maskImage = maskString;
 }
@@ -146,4 +80,4 @@ function toggleHemisphere() {
 }
 
 updateMoon();
-</script></body></html>
+</script>
