@@ -6,8 +6,29 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 .h{background:#3C2F2F!important;color:#D4C4A8!important;padding:3cqi 12cqi!important;height:10cqi!important;display:flex;justify-content:space-between;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi}
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:6cqi 0 2cqi 0}
-.moon-sphere{width:32cqi;height:32cqi;border-radius:50%;background:#1C1C1C;position:relative;overflow:hidden;transition:0.5s}
-.moon-light{position:absolute;top:0;left:0;width:100%;height:100%;background:#D4C4A8;border-radius:50%;transition:0.5s}
+
+.moon-sphere{
+    width:32cqi;
+    height:32cqi;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, #282828 0%, #151515 70%, #0d0d0d 100%);
+    position:relative;
+    overflow:hidden;
+    transition: 0.5s;
+    box-shadow: 0 0 20px rgba(212, 196, 168, 0.15), inset -2px -2px 8px rgba(0,0,0,0.7);
+}
+
+.moon-light{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: radial-gradient(circle at 40% 40%, #EFE7D8 0%, #D4C4A8 60%, #A8967A 100%);
+    border-radius:50%;
+    transition: 0.5s;
+    box-shadow: inset 3px 3px 10px rgba(255,255,255,0.5), inset -5px -5px 15px rgba(0,0,0,0.4);
+}
 
 .phase-name{color:#D4C4A8;font-size:6cqi;font-weight:700;margin-top:2cqi}
 .hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
@@ -35,8 +56,7 @@ let isSouthern = true;
 
 function getMoonAge() {
     const now = new Date();
-    const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
-
+    let y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
     if (m <= 2) { y--; m += 12; }
     let a = Math.floor(y / 100);
     let b = Math.floor(a / 4);
@@ -44,11 +64,9 @@ function getMoonAge() {
     let e = Math.floor(365.25 * (y + 4716));
     let f = Math.floor(30.6001 * (m + 1));
     let jd = c + d + e + f - 1524.5;
-    
     let daysSinceNew = jd - 2451550.1; 
     let newMoons = daysSinceNew / 29.530588853;
-    let cyclePct = newMoons - Math.floor(newMoons);
-    return cyclePct * 29.53;
+    return (newMoons - Math.floor(newMoons)) * 29.53;
 }
 
 function updateMoon() {
@@ -72,42 +90,41 @@ function updateMoon() {
     phaseText.innerText = phaseName;
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
-    let illumination = 0;
-    if (age <= 14.77) {
-        illumination = (age / 14.77) * 100;
-    } else {
-        illumination = (1 - ((age - 14.77) / 14.77)) * 100;
-    }
+    let illumination = (age <= 14.77) ? (age / 14.77) * 100 : (1 - ((age - 14.77) / 14.77)) * 100;
 
     moon.style.transform = isSouthern ? "scaleX(-1)" : "scaleX(1)";
 
     if (age <= 14.77) {
         if (illumination <= 50) {
-            light.style.background = "#1C1C1C";
+            light.style.background = "radial-gradient(circle at 100% 50%, #151515 0%, #252525 100%)";
             moon.style.backgroundColor = "#D4C4A8";
             light.style.left = "50%";
             light.style.width = (100 - (illumination * 2)) + "%";
             light.style.transform = "none";
+            light.style.boxShadow = "inset 3px 0 8px rgba(0,0,0,0.7)";
         } else {
-            light.style.background = "#D4C4A8";
-            moon.style.backgroundColor = "#1C1C1C";
+            light.style.background = "radial-gradient(circle at 40% 40%, #EFE7D8 0%, #D4C4A8 60%, #A8967A 100%)";
+            moon.style.backgroundColor = "#151515";
             light.style.left = "0";
             light.style.width = (((illumination - 50) * 2) + 50) + "%";
             light.style.transform = "none";
+            light.style.boxShadow = "inset 3px 3px 10px rgba(255,255,255,0.4), 2px 0 10px rgba(212,196,168,0.2)";
         }
     } else {
         if (illumination >= 50) {
-            light.style.background = "#D4C4A8";
-            moon.style.backgroundColor = "#1C1C1C";
+            light.style.background = "radial-gradient(circle at 40% 40%, #EFE7D8 0%, #D4C4A8 60%, #A8967A 100%)";
+            moon.style.backgroundColor = "#151515";
             light.style.left = "50%";
             light.style.width = (((100 - illumination) * 2)) + "%";
             light.style.transform = "none";
+            light.style.boxShadow = "inset -3px 3px 10px rgba(255,255,255,0.4), -2px 0 10px rgba(212,196,168,0.2)";
         } else {
-            light.style.background = "#1C1C1C";
+            light.style.background = "radial-gradient(circle at 0% 50%, #151515 0%, #252525 100%)";
             moon.style.backgroundColor = "#D4C4A8";
             light.style.left = "0";
             light.style.width = (100 - (illumination * 2)) + "%";
             light.style.transform = "none";
+            light.style.boxShadow = "inset -3px 0 8px rgba(0,0,0,0.7)";
         }
     }
 }
