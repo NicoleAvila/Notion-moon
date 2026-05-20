@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Procedural Moon</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Texture</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,41 +7,50 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* Esfera com efeito de atmosfera tridimensional */
+/* Esfera com halo de glow externo suave */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
+    background: #1C1C1C;
     position: relative;
-    overflow: hidden;
     transition: 0.5s;
     box-shadow: 
         0 0 15px 2px rgba(212, 196, 168, 0.25), 
         0 0 30px 4px rgba(212, 196, 168, 0.1);
 }
 
-/* O Canvas onde o algoritmo calcula e desenha a textura mineral */
-canvas {
+/* O corpo brilhante agora usa uma TEXTURA REAL TRAVADA DE ALTA DEFINIÇÃO */
+.moon-light {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    /* Imagem fotográfica real da Lua (Wikimedia) para visual idêntico ao Google Earth */
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
+    background-size: cover;
+    background-position: center;
     border-radius: 50%;
-    display: block;
-    transform: scaleX(-1) rotate(180deg); /* Ajuste síncrono para o Hemisfério Sul */
+    transition: clip-path 0.4s ease;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.2);
 }
 
-/* Máscara elíptica para cortar a fase perfeitamente */
-.moon-light {
+/* Fundo fantasma cinza-escuro simulando o lado oculto (Luz Cinérea) */
+.moon-dark-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     border-radius: 50%;
-    transition: clip-path 0.4s ease;
-    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, #252422 0%, #151413 80%);
+    opacity: 0.4;
 }
 
 .phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
 .hemisphere-badge{color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase}
+
 #flip-btn{background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi}
 #flip-btn:hover{opacity:1;color:#D4C4A8}
+
 footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6}
 </style></head><body>
 <div id="wrapper">
@@ -49,7 +58,8 @@ footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration
         <div class="h">LUNAR PHASE</div>
         <div class="moon-container">
             <div class="moon-sphere" id="moon">
-                <canvas id="moonCanvas" width="200" height="200"></canvas>
+                <div class="moon-dark-bg"></div>
+                <div class="moon-light" id="light"></div>
             </div>
         </div>
         <div class="phase-name" id="phase-text">Carregando...</div>
@@ -62,77 +72,20 @@ footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration
 <script>
 let isSouthern = true;
 
-// 1. GERADOR MATEMÁTICO DE RUÍDO FRACTAL (Simula relevo de satélites naturais)
-function generateMoonTexture() {
-    const canvas = document.getElementById('moonCanvas');
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-    const imgData = ctx.createImageData(w, h);
-    const data = imgData.data;
-
-    // Semente pseudo-aleatória fixa baseada na física das crateras estáveis
-    const noise = (x, y) => Math.sin(x * 12.9898 + y * 78.233) * 43758.5453 % 1;
-
-    for (let x = 0; x < w; x++) {
-        for (let y = 0; y < h; y++) {
-            let dx = x - w / 2;
-            let dy = y - h / 2;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist <= w / 2) {
-                // Cálculo de projeção esférica (Física 3D)
-                let nx = dx / (w / 2);
-                let ny = dy / (h / 2);
-                let nz = Math.sqrt(1 - nx * nx - ny * ny);
-
-                // Algoritmo de ruído em camadas (Mares e Planaltos Lunares)
-                let val = 0;
-                let scale = 0.05;
-                for (let oct = 1; oct <= 4; oct++) {
-                    val += Math.abs(noise(x * scale, y * scale)) / oct;
-                    scale *= 2.5;
-                }
-                val = (val / 1.8);
-
-                // Curvatura de iluminação (Efeito de sombreamento de Lambert)
-                let shading = (nz * 0.7) + 0.3;
-
-                // Mapeamento da paleta Dark Academia / Mineral da Lua
-                let r = Math.floor((190 * (1 - val) + 212 * val) * shading);
-                let g = Math.floor((175 * (1 - val) + 196 * val) * shading);
-                let b = Math.floor((145 * (1 - val) + 168 * val) * shading);
-
-                // Injeção de crateras pontuais matemáticas
-                if (noise(x * 0.3, y * 0.3) > 0.985) {
-                    r += 35; g += 35; b += 35; // Borda ejetada da cratera clara
-                } else if (noise(x * 0.15, y * 0.15) > 0.97) {
-                    r -= 40; g -= 40; b -= 40; // Fundo escuro da cratera profunda
-                }
-
-                let idx = (x + y * w) * 4;
-                data[idx] = r;
-                data[idx + 1] = g;
-                data[idx + 2] = b;
-                data[idx + 3] = 255;
-            }
-        }
-    }
-    ctx.putImageData(imgData, 0, 0);
-}
-
 function getMoonAge() {
     const now = new Date();
     let y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
     if (m <= 2) { y--; m += 12; }
     let a = Math.floor(y / 100); let b = Math.floor(a / 4); let c = 2 - a + b;
     let e = Math.floor(365.25 * (y + 4716)); let f = Math.floor(30.6001 * (m + 1));
-    return ((c + d + e + f - 1524.5 - 2451550.1) / 29.530588853 - Math.floor((c + d + e + f - 1524.5 - 2451550.1) / 29.530588853)) * 29.53;
+    let jd = c + d + e + f - 1524.5;
+    return ((jd - 2451550.1) / 29.530588853 - Math.floor((jd - 2451550.1) / 29.530588853)) * 29.53;
 }
 
 function updateMoon() {
     const age = getMoonAge();
     const moon = document.getElementById("moon");
+    const light = document.getElementById("light");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
 
@@ -151,25 +104,31 @@ function updateMoon() {
     hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
 
     let pct = age / 29.53;
-    moon.style.transform = isSouthern ? "scaleX(-1)" : "scaleX(1)";
 
-    // 2. MÁSCARA VETORIAL DE CORTE DAS FASES
+    // Espelhamento síncrono e rotação correta para o Hemisfério Sul
+    moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
+
+    // MÁSCARA VETORIAL DE CORTE GEOMÉTRICO PERFEITO (Blindada contra bugs visuais)
     let rx = 0;
     if (pct <= 0.5) {
         if (pct <= 0.25) {
+            // Crescente Fina Côncava: Morde perfeitamente para dentro (sweep-flag = 1)
             rx = (1 - (pct * 4)) * 50; 
-            moon.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${Math.abs(rx)},50 0 0,1 50,0')`;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${Math.abs(rx)},50 0 0,1 50,0')`;
         } else {
+            // Gibosa Crescente: Curva convexa expandindo para fora
             rx = ((pct - 0.25) * 4) * 50;
-            moon.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${rx},50 0 0,1 50,0')`;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,1 50,100 A ${rx},50 0 0,1 50,0')`;
         }
     } else {
         if (pct <= 0.75) {
+            // Gibosa Minguante
             rx = (1 - (pct - 0.5) * 4) * 50;
-            moon.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${rx},50 0 0,1 50,0')`;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${rx},50 0 0,1 50,0')`;
         } else {
+            // Minguante Fina Côncava: Morde para dentro
             rx = ((pct - 0.75) * 4) * 50;
-            moon.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${Math.abs(rx)},50 0 0,1 50,0')`;
+            light.style.clipPath = `path('M 50,0 A 50,50 0 1,0 50,100 A ${Math.abs(rx)},50 0 0,1 50,0')`;
         }
     }
 }
@@ -179,7 +138,5 @@ function toggleHemisphere() {
     updateMoon();
 }
 
-// Inicialização síncrona
-generateMoonTexture();
 updateMoon();
 </script></body></html>
