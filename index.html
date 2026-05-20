@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Terminator Fix</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Lunar Precision</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,25 +7,21 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* A esfera principal ganha o isolamento de renderização definitivo */
+/* Esfera principal com a trava de overflow definitiva */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
     background: #1C1C1C;
     position: relative;
-    
-    /* O TRUQUE DE MESTRE: Força o navegador a cortar qualquer borrão que saia do círculo */
     overflow: hidden !important;
-    backface-visibility: hidden;
-    -webkit-mask-image: -webkit-radial-gradient(white, black); /* Garante o comportamento em navegadores mobile */
-    
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
     box-shadow: 
         0 0 15px 2px rgba(212, 196, 168, 0.2), 
         0 0 30px 4px rgba(212, 196, 168, 0.08);
 }
 
-/* Fundo com a textura fotográfica real da Lua */
+/* Textura real da Lua de Alta Definição fixa */
 .moon-light {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -36,20 +32,20 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
 }
 
-/* Cortina de sombra esfumaçada (agora perfeitamente enjaulada dentro da Lua) */
+/* Cortina de sombra com desfoque de penumbra natural */
 .moon-terminator {
     position: absolute;
     top: -5%;
-    width: 110%;
+    width: 120%;
     height: 110%;
     background: #1C1C1C;
-    transition: left 0.4s ease, width 0.4s ease, border-radius 0.4s ease;
-    filter: blur(4px); /* Mantém o terminador difuso realista */
+    transition: left 0.4s ease, width 0.4s ease;
+    filter: blur(5px);
     z-index: 3;
     pointer-events: none;
 }
 
-/* Sutil fundo acinzentado para o lado oculto (Luz Cinérea) */
+/* Brilho da luz cinérea de fundo */
 .moon-dark-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -97,7 +93,6 @@ function getMoonAge() {
 
 function updateMoon() {
     const age = getMoonAge();
-    const moon = document.getElementById("moon");
     const shadow = document.getElementById("shadow");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
@@ -118,31 +113,52 @@ function updateMoon() {
 
     let pct = age / 29.53;
 
-    moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
-
+    // MATRIZ DE TRASLAÇÃO DIRETIONAL (Sem usar scaleX no elemento pai)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            let shift = (pct * 4) * 50;
-            shadow.style.left = (shift - 5) + "%";
-            shadow.style.width = "110%";
-            shadow.style.borderRadius = "50%";
+            // Crescente Fina Côncava
+            let shift = (pct * 4) * 55;
+            if (isSouthern) {
+                // No Sul, a luz cresce da esquerda para a direita (Formato de C)
+                shadow.style.left = "-25%";
+                shadow.style.width = (125 - shift) + "%";
+            } else {
+                // No Norte, a luz cresce da direita para a esquerda (Formato de D)
+                shadow.style.left = (shift - 5) + "%";
+                shadow.style.width = "120%";
+            }
         } else {
-            let shift = ((pct - 0.25) * 4) * 50;
-            shadow.style.left = "-60%";
-            shadow.style.width = (110 - shift) + "%";
-            shadow.style.borderRadius = "0 50% 50% 0";
+            // Gibosa Crescente
+            let shift = ((pct - 0.25) * 4) * 60;
+            if (isSouthern) {
+                shadow.style.left = "-65%";
+                shadow.style.width = (60 - shift) + "%";
+            } else {
+                shadow.style.left = "-65%";
+                shadow.style.width = (120 - shift) + "%";
+            }
         }
     } else {
         if (pct <= 0.75) {
-            let shift = ((pct - 0.5) * 4) * 50;
-            shadow.style.left = (-60 + shift) + "%";
-            shadow.style.width = "60%";
-            shadow.style.borderRadius = "50% 0 0 50%";
+            // Gibosa Minguante
+            let shift = ((pct - 0.5) * 4) * 60;
+            if (isSouthern) {
+                shadow.style.left = (-65 + shift) + "%";
+                shadow.style.width = "65%";
+            } else {
+                shadow.style.left = (-65 + shift) + "%";
+                shadow.style.width = "65%";
+            }
         } else {
-            let shift = ((pct - 0.75) * 4) * 50;
-            shadow.style.left = "45%";
-            shadow.style.width = (10 + shift) + "%";
-            shadow.style.borderRadius = "50%";
+            // Minguante Fina Côncava
+            let shift = ((pct - 0.75) * 4) * 55;
+            if (isSouthern) {
+                shadow.style.left = (shift - 5) + "%";
+                shadow.style.width = "120%";
+            } else {
+                shadow.style.left = "45%";
+                shadow.style.width = (15 + shift) + "%";
+            }
         }
     }
 }
