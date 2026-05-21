@@ -1,12 +1,65 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Precision Moon</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
+html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
+#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
+#c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
+.h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
+
+.moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
+
+/* Esfera principal perfeitamente limpa e sem bordas extras */
+.moon-sphere {
+    width: 34cqi;
+    height: 34cqi;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 0 0 1px rgba(212, 196, 168, 0.15),
+        0 0 20px 2px rgba(212, 196, 168, 0.08);
+}
+
+/* O SVG ocupa o espaço inteiro da esfera */
+.moon-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+</style></head><body>
+
+<div id="wrapper">
+    <div id="c">
+        <div class="h">LUNAR PHASE</div>
+        <div class="moon-container">
+            <div class="moon-sphere" id="moon">
+                <svg class="moon-svg" viewBox="0 0 100 100">
+                    <defs>
+                        <filter id="blur-filter">
+                            <feGaussianBlur stdDeviation="3" />
+                        </filter>
+                        <mask id="moon-mask">
+                            <rect x="0" y="0" width="100" height="100" fill="white" />
+                            <ellipse id="svg-shadow" cx="50" cy="50" rx="50" ry="50" fill="#D8D8D8" filter="url(#blur-filter)" />
+                        </mask>
+                    </defs>
+                    
+                    <image href="https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg" x="0" y="0" width="100" height="100" mask="url(#moon-mask)" />
+                </svg>
+            </div>
+        </div>
+        <div class="phase-name" id="phase-text" style="color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi">Carregando...</div>
+        <div class="hemisphere-badge" id="hemisphere-text" style="color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase">Hemisfério Sul</div>
+        <button id="flip-btn" onclick="toggleHemisphere()" style="background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi">Inverter Hemisfério</button>
+    </div>
+    <footer style="text-align:center;padding-top:2cqi"><a href="https://github.com/NicoleAvila" style="color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6">nikki.me</a></footer>
+</div>
+
 <script>
 let isSouthern = true;
 
-// 1. Calibração de Época precisa para o fuso local em tempo real
 function getMoonAge() {
     const now = new Date();
     const utcDate = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-    
-    // Época astronômica de referência para Lua Nova estável
     const baseNewMoon = Date.UTC(2000, 0, 6, 18, 14); 
     const synodicPeriod = 29.530588853 * 24 * 60 * 60 * 1000;
     
@@ -20,7 +73,7 @@ function getMoonAge() {
 function updateMoon() {
     const age = getMoonAge();
     const moon = document.getElementById("moon");
-    const light = document.getElementById("light");
+    const svgShadow = document.getElementById("svg-shadow");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
 
@@ -40,36 +93,35 @@ function updateMoon() {
 
     let pct = age / 29.530588853;
     
-    // Rotação física de 180° que o Hemisfério Sul exige para inverter o relevo real da foto
+    // Rotação física estável dos hemisférios planetários
     moon.style.transform = isSouthern ? "rotate(180deg)" : "rotate(0deg)";
 
-    let maskString = "";
-    let rad = (age / 29.530588853) * 2 * Math.PI;
-    
-    // Projeção elíptica tridimensional da órbita (Calcula a largura da curvatura da sombra)
-    let k = Math.abs(Math.cos(rad)) * 100;
+    // Projeção elíptica real baseada na órbita síncrona
+    let rad = pct * 2 * Math.PI;
+    let rX = Math.abs(Math.cos(rad)) * 50;
 
-    // 2. GEOMETRIA DE MÁSCARA RADIAL (Estilo MoonX: deforma a sombra em arco esférico)
+    // CONTROLE VETORIAL DA ELIPSE DE SOMBRA (Mapeamento de eixos fixo e à prova de bugs)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            // Crescente Fina Côncava: Cria a foice curvando para dentro
-            maskString = `radial-gradient(ellipse ${100 - k}% 100% at 100% 50%, rgba(0,0,0,1) ${k}%, rgba(0,0,0,0.12) ${k + 12}%)`;
+            // Crescente Fina Côncava (Foice elíptica perfeita)
+            svgShadow.setAttribute("cx", "0");
+            svgShadow.setAttribute("rx", (50 + rX).toString());
         } else {
-            // Gibosa Crescente: Curva expandindo para fora
-            maskString = `radial-gradient(ellipse ${k}% 100% at 0% 50%, rgba(0,0,0,1) ${100 - k}%, rgba(0,0,0,0.12) ${112 - k}%)`;
+            // Gibosa Crescente
+            svgShadow.setAttribute("cx", "100");
+            svgShadow.setAttribute("rx", (50 - rX).toString());
         }
     } else {
         if (pct <= 0.75) {
             // Gibosa Minguante
-            maskString = `radial-gradient(ellipse ${k}% 100% at 100% 50%, rgba(0,0,0,1) ${100 - k}%, rgba(0,0,0,0.12) ${112 - k}%)`;
+            svgShadow.setAttribute("cx", "0");
+            svgShadow.setAttribute("rx", (50 - rX).toString());
         } else {
             // Minguante Fina Côncava
-            maskString = `radial-gradient(ellipse ${100 - k}% 100% at 0% 50%, rgba(0,0,0,1) ${k}%, rgba(0,0,0,0.12) ${k + 12}%)`;
+            svgShadow.setAttribute("cx", "100");
+            svgShadow.setAttribute("rx", (50 + rX).toString());
         }
     }
-
-    light.style.webkitMaskImage = maskString;
-    light.style.maskImage = maskString;
 }
 
 function toggleHemisphere() {
@@ -78,4 +130,4 @@ function toggleHemisphere() {
 }
 
 updateMoon();
-</script>
+</script></body></html>
