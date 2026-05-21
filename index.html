@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Final Moon</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - True Moon</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,24 +7,21 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* O SEGREDO DA PENUMBRA REALISTA: O filtro gera o sombreado acompanhando o recorte da curva */
-.moon-shadow-wrapper {
+/* CONTAINER PAI: Enjaula todo o borrão para não vazar manchas pretas no Notion */
+.moon-sphere {
     width: 34cqi;
     height: 34cqi;
-    position: relative;
-    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 4px rgba(212, 196, 168, 0.15));
-}
-
-/* Base da esfera */
-.moon-sphere {
-    width: 100%;
-    height: 100%;
     border-radius: 50%;
-    background: #1C1C1C;
     position: relative;
+    overflow: hidden !important;
+    /* Força o Webkit mobile a respeitar o overflow esférico */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    box-shadow: 
+        0 0 15px 2px rgba(212, 196, 168, 0.2), 
+        0 0 30px 4px rgba(212, 196, 168, 0.08);
 }
 
-/* Textura real da Lua vinda do Wikimedia */
+/* 1. A LUA REALISTA INTEIRINHA FIXA NO FUNDO */
 .moon-light {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -32,16 +29,32 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     background-size: cover;
     background-position: center;
     border-radius: 50%;
-    transition: clip-path 0.4s ease;
+    z-index: 1;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
 }
 
-/* Luz Cinérea de fundo (Lado oculto visível sutilmente) */
+/* 2. MÁSCARA COM OPACIDADE ATRÁS (Luz Cinérea com o mesmo raio exato) */
 .moon-dark-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, #252321 0%, #151413 80%);
-    opacity: 0.5;
+    background: radial-gradient(circle at 50% 50%, #22201E 0%, #11100F 80%);
+    opacity: 0.45;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* 3. A SOMBRA ESFUMAÇADA QUE FAZ AS FASES LUNARES */
+.moon-terminator {
+    position: absolute;
+    top: -10%;
+    width: 140%; /* Um pouco maior para cobrir a transição elíptica */
+    height: 120%;
+    background: #1C1C1C; /* Mesma cor do fundo do Notion */
+    filter: blur(6px); /* Esfumaça a borda da sombra nas crateras de forma natural */
+    z-index: 3;
+    transition: left 0.4s ease, width 0.4s ease, border-radius 0.4s ease;
+    pointer-events: none;
 }
 
 .phase-name{color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi}
@@ -54,11 +67,10 @@ footer{text-align:center;padding-top:2cqi}footer a{color:#8C7355;text-decoration
     <div id="c">
         <div class="h">LUNAR PHASE</div>
         <div class="moon-container">
-            <div class="moon-shadow-wrapper">
-                <div class="moon-sphere" id="moon">
-                    <div class="moon-dark-bg"></div>
-                    <div class="moon-light" id="light"></div>
-                </div>
+            <div class="moon-sphere" id="moon">
+                <div class="moon-light"></div>
+                <div class="moon-dark-bg"></div>
+                <div class="moon-terminator" id="shadow"></div>
             </div>
         </div>
         <div class="phase-name" id="phase-text">Carregando...</div>
@@ -83,8 +95,7 @@ function getMoonAge() {
 
 function updateMoon() {
     const age = getMoonAge();
-    const moon = document.getElementById("moon");
-    const light = document.getElementById("light");
+    const shadow = document.getElementById("shadow");
     const phaseText = document.getElementById("phase-text");
     const hemiText = document.getElementById("hemisphere-text");
 
@@ -104,26 +115,58 @@ function updateMoon() {
 
     let pct = age / 29.53;
 
-    // Inversão do container com segurança astronômica para o Sul
-    moon.style.transform = isSouthern ? "scaleX(-1) rotate(180deg)" : "scaleX(1)";
-
-    // RECORTE VETORIAL GEOMÉTRICO (Agora com suporte a sombreamento de borda externa)
-    let rx = 0;
+    // LÓGICA DE ÓRBITA SUAVE E ESFUMAÇADA (Movimento da cortina Blur)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            rx = (1 - (pct * 4)) * 100; 
-            light.style.clipPath = `path('M 100,0 A 100,100 0 1,1 100,200 A ${Math.abs(rx)},100 0 0,1 100,0')`;
+            // Crescente Fina Côncava
+            let shift = (pct * 4) * 60;
+            if (isSouthern) {
+                shadow.style.left = "-40%";
+                shadow.style.width = (140 - shift) + "%";
+                shadow.style.borderRadius = "50%";
+            } else {
+                shadow.style.left = (-20 + shift) + "%";
+                shadow.style.width = "140%";
+                shadow.style.borderRadius = "50%";
+            }
         } else {
-            rx = ((pct - 0.25) * 4) * 100;
-            light.style.clipPath = `path('M 100,0 A 100,100 0 1,1 100,200 A ${rx},100 0 0,1 100,0')`;
+            // Gibosa Crescente
+            let shift = ((pct - 0.25) * 4) * 70;
+            if (isSouthern) {
+                shadow.style.left = "-100%";
+                shadow.style.width = (80 - shift) + "%";
+                shadow.style.borderRadius = "0 50% 50% 0 / 0 50% 50% 0";
+            } else {
+                shadow.style.left = "-100%";
+                shadow.style.width = (140 - shift) + "%";
+                shadow.style.borderRadius = "0 50% 50% 0 / 0 50% 50% 0";
+            }
         }
     } else {
         if (pct <= 0.75) {
-            rx = (1 - (pct - 0.5) * 4) * 100;
-            light.style.clipPath = `path('M 100,0 A 100,100 0 1,0 100,200 A ${rx},100 0 0,1 100,0')`;
+            // Gibosa Minguante
+            let shift = ((pct - 0.5) * 4) * 70;
+            if (isSouthern) {
+                shadow.style.left = (-100 + shift) + "%";
+                shadow.style.width = "80%";
+                shadow.style.borderRadius = "50% 0 0 50% / 50% 0 0 50%";
+            } else {
+                shadow.style.left = (-100 + shift) + "%";
+                shadow.style.width = "80%";
+                shadow.style.borderRadius = "50% 0 0 50% / 50% 0 0 50%";
+            }
         } else {
-            rx = ((pct - 0.75) * 4) * 100;
-            light.style.clipPath = `path('M 100,0 A 100,100 0 1,0 100,200 A ${Math.abs(rx)},100 0 0,1 100,0')`;
+            // Minguante Fina Côncava
+            let shift = ((pct - 0.75) * 4) * 60;
+            if (isSouthern) {
+                shadow.style.left = (-20 + shift) + "%";
+                shadow.style.width = "140%";
+                shadow.style.borderRadius = "50%";
+            } else {
+                shadow.style.left = "20%";
+                shadow.style.width = (20 + shift) + "%";
+                shadow.style.borderRadius = "50%";
+            }
         }
     }
 }
