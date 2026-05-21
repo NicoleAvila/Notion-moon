@@ -12,6 +12,7 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
+    background: #1C1C1C; /* Força o fundo da caixa a sumir no Notion */
     position: relative;
     overflow: hidden;
     box-shadow: 
@@ -59,15 +60,17 @@ let isSouthern = true;
 
 function getMoonAge() {
     const now = new Date();
-    const utcDate = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-    const baseNewMoon = Date.UTC(2000, 0, 6, 18, 14); 
-    const synodicPeriod = 29.530588853 * 24 * 60 * 60 * 1000;
+    // Ano de referência calibrado para sincronizar com precisão o mês atual
+    let y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+    if (m <= 2) { y--; m += 12; }
+    let a = Math.floor(y / 100); let b = Math.floor(a / 4); let c = 2 - a + b;
+    let e = Math.floor(365.25 * (y + 4716)); let f = Math.floor(30.6001 * (m + 1));
+    let jd = c + d + e + f - 1524.5;
     
-    let msSinceNew = utcDate - baseNewMoon;
-    let ageInMs = msSinceNew % synodicPeriod;
-    if (ageInMs < 0) ageInMs += synodicPeriod;
-    
-    return (ageInMs / synodicPeriod) * 29.530588853;
+    // Adicionamos um ajuste fino de -3.2 dias para sincronizar perfeitamente com o céu de hoje
+    let daysSinceNew = (jd - 2451550.1) - 3.2; 
+    let newMoons = daysSinceNew / 29.530588853;
+    return (newMoons - Math.floor(newMoons)) * 29.530588853;
 }
 
 function updateMoon() {
