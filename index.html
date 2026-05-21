@@ -1,67 +1,14 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Final Precision Moon</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
-html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
-#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
-#c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
-.h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
-
-.moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
-
-/* CONTAINER AJUSTADO: Removemos o fundo preto largo e reduzimos o espalhamento do halo */
-.moon-sphere {
-    width: 34cqi;
-    height: 34cqi;
-    border-radius: 50%;
-    background: transparent; /* Remove a borda preta grossa de fundo */
-    position: relative;
-    overflow: hidden;
-    /* Um filete de luz dourada externa de 1px simulando a crista atmosférica */
-    box-shadow: 
-        0 0 0 1px rgba(212, 196, 168, 0.2),
-        0 0 20px 2px rgba(212, 196, 168, 0.08);
-}
-
-/* Imagem da Lua perfeitamente centralizada e colada nas bordas */
-.moon-light {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg');
-    background-size: 102% 102%; /* Sangria sutil de 2% para eliminar qualquer filete fantasma nas pontas */
-    background-position: center;
-    border-radius: 50%;
-    /* Sombra interna de 1px nas bordas para assentamento esférico perfeito */
-    box-shadow: inset 0 0 8px rgba(0,0,0,0.9), inset 0 0 2px rgba(0,0,0,1);
-    transition: -webkit-mask-image 0.4s ease, mask-image 0.4s ease;
-}
-</style></head><body>
-
-<div id="wrapper">
-    <div id="c">
-        <div class="h">LUNAR PHASE</div>
-        <div class="moon-container">
-            <div class="moon-sphere" id="moon">
-                <div class="moon-light" id="light"></div>
-            </div>
-        </div>
-        <div class="phase-name" id="phase-text" style="color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi">Carregando...</div>
-        <div class="hemisphere-badge" id="hemisphere-text" style="color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase">Hemisfério Sul</div>
-        <button id="flip-btn" onclick="toggleHemisphere()" style="background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi">Inverter Hemisfério</button>
-    </div>
-    <footer style="text-align:center;padding-top:2cqi"><a href="https://github.com/NicoleAvila" style="color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6">nikki.me</a></footer>
-</div>
-
 <script>
 let isSouthern = true;
 
-// CALIBRAÇÃO SINCRONIZADA EM TEMPO REAL (Precisão baseada no fuso horário local)
+// 1. Calibração de Época precisa para o fuso local em tempo real
 function getMoonAge() {
     const now = new Date();
-    // UTC Ajustado para evitar delays de renderização da meia-noite global
     const utcDate = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
     
-    // Referência astronômica de Lua Nova conhecida (6 de Janeiro de 2000)
+    // Época astronômica de referência para Lua Nova estável
     const baseNewMoon = Date.UTC(2000, 0, 6, 18, 14); 
-    const synodicPeriod = 29.530588853 * 24 * 60 * 60 * 1000; // Período em milissegundos
+    const synodicPeriod = 29.530588853 * 24 * 60 * 60 * 1000;
     
     let msSinceNew = utcDate - baseNewMoon;
     let ageInMs = msSinceNew % synodicPeriod;
@@ -93,28 +40,31 @@ function updateMoon() {
 
     let pct = age / 29.530588853;
     
-    // Inversão astronômica real de hemisfério
+    // Rotação física de 180° que o Hemisfério Sul exige para inverter o relevo real da foto
     moon.style.transform = isSouthern ? "rotate(180deg)" : "rotate(0deg)";
 
     let maskString = "";
-    let p = 0;
+    let rad = (age / 29.530588853) * 2 * Math.PI;
+    
+    // Projeção elíptica tridimensional da órbita (Calcula a largura da curvatura da sombra)
+    let k = Math.abs(Math.cos(rad)) * 100;
 
-    // Ajuste fino da curva de interpolação linear para a foice real
+    // 2. GEOMETRIA DE MÁSCARA RADIAL (Estilo MoonX: deforma a sombra em arco esférico)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            p = Math.floor(pct * 4 * 100);
-            maskString = `linear-gradient(to left, rgba(0,0,0,0.12) ${100 - p}%, rgba(0,0,0,1) ${106 - p}%)`;
+            // Crescente Fina Côncava: Cria a foice curvando para dentro
+            maskString = `radial-gradient(ellipse ${100 - k}% 100% at 100% 50%, rgba(0,0,0,1) ${k}%, rgba(0,0,0,0.12) ${k + 12}%)`;
         } else {
-            p = Math.floor((pct - 0.25) * 4 * 100);
-            maskString = `linear-gradient(to right, rgba(0,0,0,1) ${p}%, rgba(0,0,0,0.12) ${p + 6}%)`;
+            // Gibosa Crescente: Curva expandindo para fora
+            maskString = `radial-gradient(ellipse ${k}% 100% at 0% 50%, rgba(0,0,0,1) ${100 - k}%, rgba(0,0,0,0.12) ${112 - k}%)`;
         }
     } else {
         if (pct <= 0.75) {
-            p = Math.floor((pct - 0.50) * 4 * 100);
-            maskString = `linear-gradient(to right, rgba(0,0,0,0.12) ${p}%, rgba(0,0,0,1) ${p + 6}%)`;
+            // Gibosa Minguante
+            maskString = `radial-gradient(ellipse ${k}% 100% at 100% 50%, rgba(0,0,0,1) ${100 - k}%, rgba(0,0,0,0.12) ${112 - k}%)`;
         } else {
-            p = Math.floor((pct - 0.75) * 4 * 100);
-            maskString = `linear-gradient(to left, rgba(0,0,0,1) ${p}%, rgba(0,0,0,0.12) ${p + 6}%)`;
+            // Minguante Fina Côncava
+            maskString = `radial-gradient(ellipse ${100 - k}% 100% at 0% 50%, rgba(0,0,0,1) ${k}%, rgba(0,0,0,0.12) ${k + 12}%)`;
         }
     }
 
@@ -128,4 +78,4 @@ function toggleHemisphere() {
 }
 
 updateMoon();
-</script></body></html>
+</script>
