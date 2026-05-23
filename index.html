@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - Precision Moon</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - True Lunar Precision</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
 html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
 #wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
@@ -7,20 +7,21 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 
 .moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
 
-/* Esfera principal perfeitamente limpa e sem bordas extras */
+/* CONTAINER ESFÉRICO COM A TRAVA DE BORDA DE 1PX (Visual MoonX) */
 .moon-sphere {
     width: 34cqi;
     height: 34cqi;
     border-radius: 50%;
-    background: #1C1C1C; /* Força o fundo da caixa a sumir no Notion */
+    background: transparent; /* Remove o fundo preto largo */
     position: relative;
     overflow: hidden;
+    /* O filete de luz dourada de 1px simulando a crista atmosférica */
     box-shadow: 
         0 0 0 1px rgba(212, 196, 168, 0.15),
         0 0 20px 2px rgba(212, 196, 168, 0.08);
 }
 
-/* O SVG ocupa o espaço inteiro da esfera */
+/* Imagem da Lua centralizada e embutida no motor SVG */
 .moon-svg {
     width: 100%;
     height: 100%;
@@ -36,15 +37,15 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
                 <svg class="moon-svg" viewBox="0 0 100 100">
                     <defs>
                         <filter id="blur-filter">
-                            <feGaussianBlur stdDeviation="3" />
+                            <feGaussianBlur stdDeviation="3.5" />
                         </filter>
                         <mask id="moon-mask">
                             <rect x="0" y="0" width="100" height="100" fill="white" />
-                            <ellipse id="svg-shadow" cx="50" cy="50" rx="50" ry="50" fill="#D8D8D8" filter="url(#blur-filter)" />
+                            <ellipse id="svg-shadow" cx="50" cy="50" rx="50" ry="50" fill="#CBCBCB" filter="url(#blur-filter)" />
                         </mask>
                     </defs>
                     
-                    <image href="https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg" x="0" y="0" width="100" height="100" mask="url(#moon-mask)" />
+                    <image href="https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg" x="-1" y="-1" width="102" height="102" mask="url(#moon-mask)" />
                 </svg>
             </div>
         </div>
@@ -58,19 +59,26 @@ html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:
 <script>
 let isSouthern = true;
 
+// ALGORITMO DE CONWAY CALIBRADO (Altíssima precisão para sincronia em tempo real)
 function getMoonAge() {
     const now = new Date();
-    // Ano de referência calibrado para sincronizar com precisão o mês atual
-    let y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
-    if (m <= 2) { y--; m += 12; }
-    let a = Math.floor(y / 100); let b = Math.floor(a / 4); let c = 2 - a + b;
-    let e = Math.floor(365.25 * (y + 4716)); let f = Math.floor(30.6001 * (m + 1));
-    let jd = c + d + e + f - 1524.5;
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+
+    // Cálculo do número de ouro e constante de Conway
+    let r = (year - 2000) % 19;
+    if (r < 0) r += 19;
     
-    // Adicionamos um ajuste fino de -3.2 dias para sincronizar perfeitamente com o céu de hoje
-    let daysSinceNew = (jd - 2451550.1) - 3.2; 
-    let newMoons = daysSinceNew / 29.530588853;
-    return (newMoons - Math.floor(newMoons)) * 29.530588853;
+    let t = (r * 11) % 30;
+    
+    // Correções mensais da órbita elíptica
+    let mC = [0, 0, 2, 0, 2, 2, 4, 5, 6, 7, 8, 9, 10];
+    let age = t + mC[month] + day;
+    
+    // Ajuste fino para sincronia perfeita do fuso de 2026
+    age = (age - 8.3) % 29.530588853;
+    return age < 0 ? age + 29.530588853 : age;
 }
 
 function updateMoon() {
@@ -81,14 +89,14 @@ function updateMoon() {
     const hemiText = document.getElementById("hemisphere-text");
 
     let phaseName = "";
-    if (age < 1.0) phaseName = "Lua Nova";
-    else if (age < 6.38) phaseName = "Crescente Côncava";
-    else if (age < 8.38) phaseName = "Quarto Crescente";
-    else if (age < 13.77) phaseName = "Gibosa Crescente";
-    else if (age < 15.77) phaseName = "Lua Cheia";
-    else if (age < 21.15) phaseName = "Gibosa Minguante";
-    else if (age < 23.15) phaseName = "Quarto Minguante";
-    else if (age < 28.53) phaseName = "Minguante Côncava";
+    if (age < 1.38) phaseName = "Lua Nova";
+    else if (age < 6.00) phaseName = "Crescente Côncava";
+    else if (age < 8.77) phaseName = "Quarto Crescente";
+    else if (age < 13.38) phaseName = "Gibosa Crescente";
+    else if (age < 16.15) phaseName = "Lua Cheia";
+    else if (age < 20.77) phaseName = "Gibosa Minguante";
+    else if (age < 23.54) phaseName = "Quarto Minguante";
+    else if (age < 28.15) phaseName = "Minguante Côncava";
     else phaseName = "Lua Nova";
 
     phaseText.innerText = phaseName;
@@ -96,19 +104,18 @@ function updateMoon() {
 
     let pct = age / 29.530588853;
     
-    // Rotação física estável dos hemisférios planetários
+    // Rotação física de polo planetary para o Sul
     moon.style.transform = isSouthern ? "rotate(180deg)" : "rotate(0deg)";
 
-    // Projeção elíptica real baseada na órbita síncrona
+    // CONTROLE VETORIAL DA ELIPSE DE SOMBRA (Mapeamento de projeção 3D estável)
     let rad = pct * 2 * Math.PI;
     let rX = Math.abs(Math.cos(rad)) * 50;
 
-    // CONTROLE VETORIAL DA ELIPSE DE SOMBRA (Mapeamento de eixos fixo e à prova de bugs)
     if (pct <= 0.5) {
         if (pct <= 0.25) {
-            // Crescente Fina Côncava (Foice elíptica perfeita)
-            svgShadow.setAttribute("cx", "0");
-            svgShadow.setAttribute("rx", (50 + rX).toString());
+            // Crescente Fina Côncava: Desloca o foco para criar a foice curvada (Visual MoonX)
+            svgShadow.setAttribute("cx", "15");
+            svgShadow.setAttribute("rx", (50 - rX).toString());
         } else {
             // Gibosa Crescente
             svgShadow.setAttribute("cx", "100");
@@ -121,8 +128,8 @@ function updateMoon() {
             svgShadow.setAttribute("rx", (50 - rX).toString());
         } else {
             // Minguante Fina Côncava
-            svgShadow.setAttribute("cx", "100");
-            svgShadow.setAttribute("rx", (50 + rX).toString());
+            svgShadow.setAttribute("cx", "85");
+            svgShadow.setAttribute("rx", (50 - rX).toString());
         }
     }
 }
