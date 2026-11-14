@@ -1,143 +1,305 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dead Physicist Society - True Lunar Precision</title><style>
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;700&display=swap');
-html,body{background:#1C1C1C;margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:'Crimson Text',serif;display:flex;justify-content:center;align-items:center}
-#wrapper{width:100%;height:100%;max-width:260px;max-height:280px;display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;padding:4px;container-type:inline-size}
-#c{width:100%!important;background:transparent!important;text-align:center;padding-bottom:6cqi}
-.h{background:transparent!important;color:#D4C4A8!important;padding:2cqi 0!important;height:auto!important;display:flex;justify-content:center;align-items:center;text-transform:uppercase;font-weight:700;font-size:6cqi;letter-spacing:1px}
-
-.moon-container{display:flex;justify-content:center;align-items:center;padding:5cqi 0 3cqi 0}
-
-/* CONTAINER ESFÉRICO COM A TRAVA DE BORDA DE 1PX (Visual MoonX) */
-.moon-sphere {
-    width: 34cqi;
-    height: 34cqi;
-    border-radius: 50%;
-    background: transparent; /* Remove o fundo preto largo */
-    position: relative;
-    overflow: hidden;
-    /* O filete de luz dourada de 1px simulando a crista atmosférica */
-    box-shadow: 
-        0 0 0 1px rgba(212, 196, 168, 0.15),
-        0 0 20px 2px rgba(212, 196, 168, 0.08);
-}
-
-/* Imagem da Lua centralizada e embutida no motor SVG */
-.moon-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-</style></head><body>
-
-<div id="wrapper">
-    <div id="c">
-        <div class="h">LUNAR PHASE</div>
-        <div class="moon-container">
-            <div class="moon-sphere" id="moon">
-                <svg class="moon-svg" viewBox="0 0 100 100">
-                    <defs>
-                        <filter id="blur-filter">
-                            <feGaussianBlur stdDeviation="3.5" />
-                        </filter>
-                        <mask id="moon-mask">
-                            <rect x="0" y="0" width="100" height="100" fill="white" />
-                            <ellipse id="svg-shadow" cx="50" cy="50" rx="50" ry="50" fill="#CBCBCB" filter="url(#blur-filter)" />
-                        </mask>
-                    </defs>
-                    
-                    <image href="https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg" x="-1" y="-1" width="102" height="102" mask="url(#moon-mask)" />
-                </svg>
-            </div>
-        </div>
-        <div class="phase-name" id="phase-text" style="color:#D4C4A8;font-size:6.5cqi;font-weight:700;margin-top:3cqi">Carregando...</div>
-        <div class="hemisphere-badge" id="hemisphere-text" style="color:#8C7355;font-size:3.8cqi;margin-top:1cqi;letter-spacing:0.5px;text-transform:uppercase">Hemisfério Sul</div>
-        <button id="flip-btn" onclick="toggleHemisphere()" style="background:none;border:none;color:#8C7355;cursor:pointer;font-size:3.5cqi;font-family:inherit;text-decoration:underline;opacity:0.6;margin-top:3cqi">Inverter Hemisfério</button>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fases da Lua</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#04040c;--border:rgba(180,160,240,0.1);--gold:#c8a55a;--silver:#c8d4f0;--muted:#5a5480;--text:#e0daf8;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .widget{position:relative;z-index:1;width:360px;background:linear-gradient(160deg,#09091a,#06060f);border:1px solid var(--border);border-radius:24px;padding:28px 22px 22px;box-shadow:0 8px 40px rgba(0,0,0,.7);}
+  .widget::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:55%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .header{text-align:center;margin-bottom:18px;}
+  .title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);}
+  .current-date{font-size:13px;color:var(--muted);font-style:italic;margin-top:3px;}
+  .hemi-toggle{display:flex;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:40px;padding:3px;gap:2px;margin-bottom:20px;}
+  .hemi-btn{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 0;border-radius:36px;cursor:pointer;transition:all .3s;}
+  .hemi-btn.active{background:linear-gradient(135deg,rgba(180,160,255,.18),rgba(100,80,200,.22));color:var(--silver);border:1px solid rgba(200,180,255,.2);}
+  .moon-stage{display:flex;justify-content:center;align-items:center;margin:4px 0 18px;position:relative;height:185px;}
+  .moon-aura{position:absolute;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(200,180,255,.07),transparent 65%);animation:breathe 5s ease-in-out infinite;pointer-events:none;}
+  @keyframes breathe{0%,100%{opacity:.6;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
+  .moon-wrap{position:relative;z-index:2;width:160px;height:160px;}
+  .moon-wrap img{width:160px;height:160px;border-radius:50%;display:block;object-fit:cover;box-shadow:0 0 30px rgba(180,160,255,.25);}
+  /* flip for southern hemisphere */
+  .moon-wrap.south img{transform:scaleX(-1);}
+  .moon-loading{width:160px;height:160px;border-radius:50%;background:#0d0d22;display:flex;align-items:center;justify-content:center;font-size:28px;animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+  .phase-info{text-align:center;margin-bottom:18px;}
+  .phase-name{font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:.1em;}
+  .illumination{font-size:13px;color:var(--gold);margin-top:4px;font-style:italic;}
+  .next-info{font-size:12px;color:var(--muted);margin-top:3px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+  .info-card{background:rgba(255,255,255,.025);border:1px solid rgba(180,160,240,.08);border-radius:12px;padding:10px 12px;}
+  .ic-label{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+  .ic-value{font-size:14px;color:var(--text);}
+  .phases-section{border-top:1px solid var(--border);padding-top:14px;}
+  .phases-title{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px;}
+  .phases-strip{display:flex;justify-content:space-between;align-items:flex-end;}
+  .mini-phase{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default;}
+  .mini-img-wrap{width:30px;height:30px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.07);transition:transform .2s,box-shadow .2s;background:#0a0a1a;}
+  .mini-img-wrap img{width:30px;height:30px;border-radius:50%;object-fit:cover;display:block;}
+  .mini-img-wrap.south img{transform:scaleX(-1);}
+  .mini-phase.active .mini-img-wrap{border-color:var(--gold);box-shadow:0 0 10px rgba(200,165,90,.55);transform:scale(1.2);}
+  .mini-label{font-size:12px;text-align:center;}
+  .footer{text-align:center;margin-top:14px;font-size:8.5px;color:rgba(90,84,128,.45);letter-spacing:.1em;font-style:italic;}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="widget">
+  <div class="header">
+    <div class="title">☽ Fases da Lua ☾</div>
+    <div class="current-date" id="dateDisplay"></div>
+  </div>
+  <div class="hemi-toggle">
+    <button class="hemi-btn active" id="btnNorth" onclick="setHemi('north')">⬆ Hemisfério Norte</button>
+    <button class="hemi-btn" id="btnSouth" onclick="setHemi('south')">Hemisfério Sul ⬇</button>
+  </div>
+  <div class="moon-stage">
+    <div class="moon-aura"></div>
+    <div class="moon-wrap" id="mainMoonWrap">
+      <div class="moon-loading" id="moonLoading">🌕</div>
     </div>
-    <footer style="text-align:center;padding-top:2cqi"><a href="https://github.com/NicoleAvila" style="color:#8C7355;text-decoration:none;font-size:4.5cqi;opacity:.6">nikki.me</a></footer>
+  </div>
+  <div class="phase-info">
+    <div class="phase-name"><span id="phaseSymbol"></span> <span id="phaseName">—</span></div>
+    <div class="illumination" id="illumination">—</div>
+    <div class="next-info" id="nextInfo">—</div>
+  </div>
+  <div class="info-grid">
+    <div class="info-card"><div class="ic-label">Idade</div><div class="ic-value" id="moonAge">—</div></div>
+    <div class="info-card"><div class="ic-label">Iluminação</div><div class="ic-value" id="illumPct">—</div></div>
+    <div class="info-card"><div class="ic-label">Distância</div><div class="ic-value" id="moonDist">—</div></div>
+    <div class="info-card"><div class="ic-label">Hemisfério</div><div class="ic-value" id="hemiVal">Norte</div></div>
+  </div>
+  <div class="phases-section">
+    <div class="phases-title">As 8 Fases do Ciclo Lunar</div>
+    <div class="phases-strip" id="phasesStrip"></div>
+  </div>
+  <div class="footer">Fotos reais: NASA/LRO · Dial-a-Moon API</div>
 </div>
 
 <script>
-let isSouthern = true;
+// ─────────────────────────────────────────────────────────────────
+// NASA Dial-a-Moon API
+// Returns the real moon photo for any UTC datetime
+// URL: https://svs.gsfc.nasa.gov/api/dialamoon/YYYY-MM-DDTHH:MM
+// Response JSON has .image.url with the actual moon photo
+// Images are served from svs.gsfc.nasa.gov — no CORS issues for <img> tags
+// ─────────────────────────────────────────────────────────────────
 
-// ALGORITMO DE CONWAY CALIBRADO (Altíssima precisão para sincronia em tempo real)
-function getMoonAge() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-
-    // Cálculo do número de ouro e constante de Conway
-    let r = (year - 2000) % 19;
-    if (r < 0) r += 19;
-    
-    let t = (r * 11) % 30;
-    
-    // Correções mensais da órbita elíptica
-    let mC = [0, 0, 2, 0, 2, 2, 4, 5, 6, 7, 8, 9, 10];
-    let age = t + mC[month] + day;
-    
-    // Ajuste fino para sincronia perfeita do fuso de 2026
-    age = (age - 8.3) % 29.530588853;
-    return age < 0 ? age + 29.530588853 : age;
+// Format date → "YYYY-MM-DDTHH:00"
+function toDialaDate(date) {
+  const pad = n => String(n).padStart(2,'0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:00`;
 }
 
-function updateMoon() {
-    const age = getMoonAge();
-    const moon = document.getElementById("moon");
-    const svgShadow = document.getElementById("svg-shadow");
-    const phaseText = document.getElementById("phase-text");
-    const hemiText = document.getElementById("hemisphere-text");
-
-    let phaseName = "";
-    if (age < 1.38) phaseName = "Lua Nova";
-    else if (age < 6.00) phaseName = "Crescente Côncava";
-    else if (age < 8.77) phaseName = "Quarto Crescente";
-    else if (age < 13.38) phaseName = "Gibosa Crescente";
-    else if (age < 16.15) phaseName = "Lua Cheia";
-    else if (age < 20.77) phaseName = "Gibosa Minguante";
-    else if (age < 23.54) phaseName = "Quarto Minguante";
-    else if (age < 28.15) phaseName = "Minguante Côncava";
-    else phaseName = "Lua Nova";
-
-    phaseText.innerText = phaseName;
-    hemiText.innerText = isSouthern ? "Hemisfério Sul (C)" : "Hemisfério Norte (D)";
-
-    let pct = age / 29.530588853;
-    
-    // Rotação física de polo planetary para o Sul
-    moon.style.transform = isSouthern ? "rotate(180deg)" : "rotate(0deg)";
-
-    // CONTROLE VETORIAL DA ELIPSE DE SOMBRA (Mapeamento de projeção 3D estável)
-    let rad = pct * 2 * Math.PI;
-    let rX = Math.abs(Math.cos(rad)) * 50;
-
-    if (pct <= 0.5) {
-        if (pct <= 0.25) {
-            // Crescente Fina Côncava: Desloca o foco para criar a foice curvada (Visual MoonX)
-            svgShadow.setAttribute("cx", "15");
-            svgShadow.setAttribute("rx", (50 - rX).toString());
-        } else {
-            // Gibosa Crescente
-            svgShadow.setAttribute("cx", "100");
-            svgShadow.setAttribute("rx", (50 - rX).toString());
-        }
-    } else {
-        if (pct <= 0.75) {
-            // Gibosa Minguante
-            svgShadow.setAttribute("cx", "0");
-            svgShadow.setAttribute("rx", (50 - rX).toString());
-        } else {
-            // Minguante Fina Côncava
-            svgShadow.setAttribute("cx", "85");
-            svgShadow.setAttribute("rx", (50 - rX).toString());
-        }
-    }
+// Fetch moon photo URL from NASA for a given date
+async function fetchMoonImage(date) {
+  const ts = toDialaDate(date);
+  const apiUrl = `https://svs.gsfc.nasa.gov/api/dialamoon/${ts}`;
+  const res = await fetch(apiUrl);
+  const json = await res.json();
+  return json.image.url; // e.g. https://svs.gsfc.nasa.gov/vis/...
 }
 
-function toggleHemisphere() {
-    isSouthern = !isSouthern;
-    updateMoon();
+// The 8 demo dates — fixed dates known to produce each phase
+// We derive them dynamically from known new moon reference
+function getPhaseDate(targetAge) {
+  // New moon reference: Jan 17, 2024 06:53 UTC (J2000-based)
+  const REF_NEW_MOON = new Date('2024-01-11T11:57:00Z');
+  const SYNODIC = 29.53058867 * 24 * 3600 * 1000; // ms
+  const now = Date.now();
+  // Find how many cycles since reference
+  const cycles = Math.floor((now - REF_NEW_MOON.getTime()) / SYNODIC);
+  // Use a past cycle for stability
+  const cycleStart = new Date(REF_NEW_MOON.getTime() + cycles * SYNODIC);
+  return new Date(cycleStart.getTime() + targetAge * 24 * 3600 * 1000);
 }
 
-updateMoon();
-</script></body></html>
+// ─────────────────────────────────────────────────────────────────
+// ASTRONOMY
+// ─────────────────────────────────────────────────────────────────
+function getMoonData(date) {
+  const jd  = (date.getTime() / 86400000) + 2440587.5;
+  const T   = (jd - 2451545.0) / 36525;
+  const age = ((jd - 2451549.5) % 29.53058867 + 29.53058867) % 29.53058867;
+  const Mp  = ((134.9633964 + 477198.8675055*T) % 360) * Math.PI/180;
+  const D   = ((297.8501921 + 445267.1114034*T) % 360) * Math.PI/180;
+  const dist = Math.round(385001 - 20905*Math.cos(Mp) - 3699*Math.cos(2*D-Mp) - 2956*Math.cos(2*D));
+  const illum = Math.round(50*(1-Math.cos(2*Math.PI*age/29.53058867)));
+  return { age, illum, dist };
+}
+
+const PHASES = [
+  { name:'Lua Nova',          sym:'🌑', min: 0,    max: 1.85,  demoAge: 0.5  },
+  { name:'Crescente',         sym:'🌒', min: 1.85, max: 7.38,  demoAge: 3.7  },
+  { name:'Quarto Crescente',  sym:'🌓', min: 7.38, max:11.10,  demoAge: 7.38 },
+  { name:'Gibosa Crescente',  sym:'🌔', min:11.10, max:14.77,  demoAge:12.5  },
+  { name:'Lua Cheia',         sym:'🌕', min:14.77, max:16.61,  demoAge:14.77 },
+  { name:'Gibosa Minguante',  sym:'🌖', min:16.61, max:22.15,  demoAge:18.5  },
+  { name:'Quarto Minguante',  sym:'🌗', min:22.15, max:25.84,  demoAge:22.15 },
+  { name:'Minguante',         sym:'🌘', min:25.84, max:29.53,  demoAge:27.7  },
+];
+
+function currentPhase(age) { return PHASES.find(p=>age>=p.min&&age<p.max)||PHASES[0]; }
+
+function nextPhaseText(age) {
+  const ms=[{d:0,n:'Lua Nova'},{d:7.38,n:'Quarto Crescente'},{d:14.77,n:'Lua Cheia'},{d:22.15,n:'Quarto Minguante'},{d:29.53,n:'Lua Nova'}];
+  for(const m of ms) if(age<m.d){ const r=m.d-age; return `Próxima: ${m.n} em ${r<1?'hoje':r.toFixed(1)+' dias'}`; }
+  return '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// IMAGE CACHE
+// ─────────────────────────────────────────────────────────────────
+const imgCache = {};
+
+async function getMoonImg(date, id) {
+  const key = toDialaDate(date);
+  if (imgCache[key]) return imgCache[key];
+  try {
+    const url = await fetchMoonImage(date);
+    imgCache[key] = url;
+    return url;
+  } catch(e) {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STARFIELD
+// ─────────────────────────────────────────────────────────────────
+function initStars() {
+  const c = document.getElementById('stars');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  const ctx = c.getContext('2d');
+  let s = 0xABCD1234;
+  const rng = () => { s=(s*1664525+1013904223)|0; return (s>>>0)/0xFFFFFFFF; };
+  for(let i=0;i<200;i++){
+    ctx.beginPath(); ctx.arc(rng()*c.width,rng()*c.height,rng()*1.3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${(rng()*.7+.1).toFixed(2)})`; ctx.fill();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UI
+// ─────────────────────────────────────────────────────────────────
+let hemi = 'north';
+
+function makeImg(url, size, isSouth) {
+  const wrap = document.createElement('div');
+  wrap.className = 'mini-img-wrap' + (isSouth ? ' south' : '');
+  wrap.style.width = wrap.style.height = size + 'px';
+  const img = document.createElement('img');
+  img.width = img.height = size;
+  img.src = url;
+  img.style.borderRadius = '50%';
+  img.style.objectFit = 'cover';
+  img.style.display = 'block';
+  if (isSouth) img.style.transform = 'scaleX(-1)';
+  wrap.appendChild(img);
+  return wrap;
+}
+
+async function buildStrip(currentAge, h) {
+  const strip = document.getElementById('phasesStrip');
+  strip.innerHTML = '';
+
+  for (const p of PHASES) {
+    const div = document.createElement('div');
+    div.className = 'mini-phase' + (currentAge>=p.min&&currentAge<p.max?' active':'');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mini-img-wrap' + (h==='south'?' south':'');
+
+    // Placeholder
+    const placeholder = document.createElement('div');
+    placeholder.style.cssText = `width:30px;height:30px;border-radius:50%;background:#0a0a1a;display:flex;align-items:center;justify-content:center;font-size:14px;`;
+    placeholder.textContent = p.sym;
+    wrap.appendChild(placeholder);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'mini-label';
+    lbl.textContent = p.sym;
+    lbl.title = p.name;
+
+    div.appendChild(wrap);
+    div.appendChild(lbl);
+    strip.appendChild(div);
+
+    // Load image async
+    const demoDate = getPhaseDate(p.demoAge);
+    getMoonImg(demoDate).then(url => {
+      if (!url) return;
+      wrap.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = url;
+      img.width = img.height = 30;
+      img.style.cssText = 'border-radius:50%;object-fit:cover;display:block;width:30px;height:30px;';
+      if (h === 'south') img.style.transform = 'scaleX(-1)';
+      wrap.appendChild(img);
+    });
+  }
+}
+
+async function setMainMoon(date, h) {
+  const wrap = document.getElementById('mainMoonWrap');
+  // Show loading state
+  wrap.innerHTML = '<div class="moon-loading">🌕</div>';
+
+  const url = await getMoonImg(date);
+  if (!url) {
+    wrap.innerHTML = '<div class="moon-loading" style="opacity:.4">⚠️</div>';
+    return;
+  }
+
+  wrap.innerHTML = '';
+  wrap.className = 'moon-wrap' + (h==='south' ? ' south' : '');
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.width = img.height = 160;
+  img.alt = 'Foto real da Lua · NASA';
+  img.style.cssText = 'border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 30px rgba(180,160,255,.25);';
+  if (h === 'south') img.style.transform = 'scaleX(-1)';
+  wrap.appendChild(img);
+}
+
+function setHemi(h) {
+  hemi = h;
+  document.getElementById('btnNorth').classList.toggle('active', h==='north');
+  document.getElementById('btnSouth').classList.toggle('active', h==='south');
+  document.getElementById('hemiVal').textContent = h==='north'?'Norte':'Sul';
+  update();
+}
+
+async function update() {
+  const now = new Date();
+  const { age, illum, dist } = getMoonData(now);
+  const ph = currentPhase(age);
+
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('phaseSymbol').textContent = ph.sym;
+  document.getElementById('phaseName').textContent   = ph.name;
+  document.getElementById('illumination').textContent = `${illum}% iluminada`;
+  document.getElementById('nextInfo').textContent    = nextPhaseText(age);
+  document.getElementById('moonAge').textContent     = `${age.toFixed(1)} dias`;
+  document.getElementById('illumPct').textContent    = `${illum}%`;
+  document.getElementById('moonDist').textContent    = `${(dist/1000).toFixed(0)}k km`;
+
+  // Load real NASA photo for current time
+  await setMainMoon(now, hemi);
+  buildStrip(age, hemi);
+}
+
+initStars();
+update();
+setInterval(update, 3600000); // refresh hourly (NASA updates hourly)
+window.addEventListener('resize', initStars);
+</script>
+</body>
+</html>
