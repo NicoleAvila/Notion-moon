@@ -18,32 +18,36 @@
   .hemi-toggle{display:flex;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:40px;padding:3px;gap:2px;margin-bottom:20px;}
   .hemi-btn{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 0;border-radius:36px;cursor:pointer;transition:all .3s;}
   .hemi-btn.active{background:linear-gradient(135deg,rgba(180,160,255,.18),rgba(100,80,200,.22));color:var(--silver);border:1px solid rgba(200,180,255,.2);}
+
+  /* Moon stage */
   .moon-stage{display:flex;justify-content:center;align-items:center;margin:4px 0 18px;position:relative;height:185px;}
   .moon-aura{position:absolute;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(200,180,255,.07),transparent 65%);animation:breathe 5s ease-in-out infinite;pointer-events:none;}
   @keyframes breathe{0%,100%{opacity:.6;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
-  .moon-wrap{position:relative;z-index:2;width:160px;height:160px;}
-  .moon-wrap img{width:160px;height:160px;border-radius:50%;display:block;object-fit:cover;box-shadow:0 0 30px rgba(180,160,255,.25);}
-  /* flip for southern hemisphere */
-  .moon-wrap.south img{transform:scaleX(-1);}
-  .moon-loading{width:160px;height:160px;border-radius:50%;background:#0d0d22;display:flex;align-items:center;justify-content:center;font-size:28px;animation:pulse 2s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+  .moon-img{width:160px;height:160px;border-radius:50%;object-fit:cover;position:relative;z-index:2;box-shadow:0 0 32px rgba(180,160,255,.28),0 0 2px rgba(255,255,255,.12);display:block;}
+  .moon-placeholder{width:160px;height:160px;border-radius:50%;background:#08081a;display:flex;align-items:center;justify-content:center;font-size:36px;animation:pulse 2s ease-in-out infinite;position:relative;z-index:2;}
+  @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:.9;}}
+
+  /* Phase info */
   .phase-info{text-align:center;margin-bottom:18px;}
   .phase-name{font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:.1em;}
   .illumination{font-size:13px;color:var(--gold);margin-top:4px;font-style:italic;}
   .next-info{font-size:12px;color:var(--muted);margin-top:3px;}
+
+  /* Info grid */
   .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
   .info-card{background:rgba(255,255,255,.025);border:1px solid rgba(180,160,240,.08);border-radius:12px;padding:10px 12px;}
   .ic-label{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
   .ic-value{font-size:14px;color:var(--text);}
+
+  /* 8 phases strip */
   .phases-section{border-top:1px solid var(--border);padding-top:14px;}
   .phases-title{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px;}
   .phases-strip{display:flex;justify-content:space-between;align-items:flex-end;}
-  .mini-phase{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default;}
-  .mini-img-wrap{width:30px;height:30px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.07);transition:transform .2s,box-shadow .2s;background:#0a0a1a;}
-  .mini-img-wrap img{width:30px;height:30px;border-radius:50%;object-fit:cover;display:block;}
-  .mini-img-wrap.south img{transform:scaleX(-1);}
-  .mini-phase.active .mini-img-wrap{border-color:var(--gold);box-shadow:0 0 10px rgba(200,165,90,.55);transform:scale(1.2);}
+  .mini-phase{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .mini-moon{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.07);transition:transform .2s,box-shadow .2s;display:block;background:#06060f;}
+  .mini-phase.active .mini-moon{border-color:var(--gold);box-shadow:0 0 10px rgba(200,165,90,.55);transform:scale(1.2);}
   .mini-label{font-size:12px;text-align:center;}
+
   .footer{text-align:center;margin-top:14px;font-size:8.5px;color:rgba(90,84,128,.45);letter-spacing:.1em;font-style:italic;}
 </style>
 </head>
@@ -60,9 +64,7 @@
   </div>
   <div class="moon-stage">
     <div class="moon-aura"></div>
-    <div class="moon-wrap" id="mainMoonWrap">
-      <div class="moon-loading" id="moonLoading">🌕</div>
-    </div>
+    <div class="moon-placeholder" id="moonPlaceholder">🌕</div>
   </div>
   <div class="phase-info">
     <div class="phase-name"><span id="phaseSymbol"></span> <span id="phaseName">—</span></div>
@@ -79,45 +81,47 @@
     <div class="phases-title">As 8 Fases do Ciclo Lunar</div>
     <div class="phases-strip" id="phasesStrip"></div>
   </div>
-  <div class="footer">Fotos reais: NASA/LRO · Dial-a-Moon API</div>
+  <div class="footer">Fotos reais: NASA/LRO · SVS #5587 / #5588</div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────
-// NASA Dial-a-Moon API
-// Returns the real moon photo for any UTC datetime
-// URL: https://svs.gsfc.nasa.gov/api/dialamoon/YYYY-MM-DDTHH:MM
-// Response JSON has .image.url with the actual moon photo
-// Images are served from svs.gsfc.nasa.gov — no CORS issues for <img> tags
-// ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// NASA SVS Dial-a-Moon — URL direto, sem fetch/CORS
+//
+// A NASA publica uma foto por hora do ano.
+// Frame = hora do ano em UTC, começando em 1.
+// Norte: vis/a000000/a005500/a005587/frames/730x730_1x1_30p/moon.XXXX.jpg
+// Sul:   vis/a000000/a005500/a005588/frames/730x730_1x1_30p/moon.XXXX.jpg
+//
+// Para anos anteriores (caso date < 2026 ou > 2026):
+// 2025 Norte: a005415  Sul: a005416
+// 2024 Norte: a005187  Sul: a005188
+// 2023 Norte: a005048  Sul: a005049
+// ═══════════════════════════════════════════════════════
 
-// Format date → "YYYY-MM-DDTHH:00"
-function toDialaDate(date) {
-  const pad = n => String(n).padStart(2,'0');
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth()+1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:00`;
-}
+const SVS_IDS = {
+  2023: { north: '5048', south: '5049', base: 'a005000' },
+  2024: { north: '5187', south: '5188', base: 'a005100' },
+  2025: { north: '5415', south: '5416', base: 'a005400' },
+  2026: { north: '5587', south: '5588', base: 'a005500' },
+};
 
-// Fetch moon photo URL from NASA for a given date
-async function fetchMoonImage(date) {
-  const ts = toDialaDate(date);
-  const apiUrl = `https://svs.gsfc.nasa.gov/api/dialamoon/${ts}`;
-  const res = await fetch(apiUrl);
-  const json = await res.json();
-  return json.image.url; // e.g. https://svs.gsfc.nasa.gov/vis/...
-}
+function getNasaUrl(date, hemi) {
+  const year = date.getUTCFullYear();
+  const ids = SVS_IDS[year] || SVS_IDS[2026];
 
-// The 8 demo dates — fixed dates known to produce each phase
-// We derive them dynamically from known new moon reference
-function getPhaseDate(targetAge) {
-  // New moon reference: Jan 17, 2024 06:53 UTC (J2000-based)
-  const REF_NEW_MOON = new Date('2024-01-11T11:57:00Z');
-  const SYNODIC = 29.53058867 * 24 * 3600 * 1000; // ms
-  const now = Date.now();
-  // Find how many cycles since reference
-  const cycles = Math.floor((now - REF_NEW_MOON.getTime()) / SYNODIC);
-  // Use a past cycle for stability
-  const cycleStart = new Date(REF_NEW_MOON.getTime() + cycles * SYNODIC);
-  return new Date(cycleStart.getTime() + targetAge * 24 * 3600 * 1000);
+  // Hour of year (1-based, UTC)
+  const start = Date.UTC(year, 0, 1, 0, 0, 0);
+  const hourOfYear = Math.floor((date.getTime() - start) / 3600000) + 1;
+  const frame = String(Math.max(1, Math.min(hourOfYear, 8784))).padStart(4, '0');
+
+  const id = hemi === 'south' ? ids.south : ids.north;
+  // base folder pattern: a005500 for 5587 → a005XXX where XXX = floor(id/100)*100
+  const idNum = parseInt(id);
+  const baseId = 'a' + String(Math.floor(idNum / 100) * 100).padStart(6, '0');
+  const vizId  = 'a' + String(idNum).padStart(6, '0');
+
+  return `https://svs.gsfc.nasa.gov/vis/a000000/${baseId}/${vizId}/frames/730x730_1x1_30p/moon.${frame}.jpg`;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -135,39 +139,95 @@ function getMoonData(date) {
 }
 
 const PHASES = [
-  { name:'Lua Nova',          sym:'🌑', min: 0,    max: 1.85,  demoAge: 0.5  },
-  { name:'Crescente',         sym:'🌒', min: 1.85, max: 7.38,  demoAge: 3.7  },
-  { name:'Quarto Crescente',  sym:'🌓', min: 7.38, max:11.10,  demoAge: 7.38 },
-  { name:'Gibosa Crescente',  sym:'🌔', min:11.10, max:14.77,  demoAge:12.5  },
-  { name:'Lua Cheia',         sym:'🌕', min:14.77, max:16.61,  demoAge:14.77 },
-  { name:'Gibosa Minguante',  sym:'🌖', min:16.61, max:22.15,  demoAge:18.5  },
-  { name:'Quarto Minguante',  sym:'🌗', min:22.15, max:25.84,  demoAge:22.15 },
-  { name:'Minguante',         sym:'🌘', min:25.84, max:29.53,  demoAge:27.7  },
+  { name:'Lua Nova',          sym:'🌑', min: 0,    max: 1.85,  demoHour:   1 },
+  { name:'Crescente',         sym:'🌒', min: 1.85, max: 7.38,  demoHour:  89 },
+  { name:'Quarto Crescente',  sym:'🌓', min: 7.38, max:11.10,  demoHour: 177 },
+  { name:'Gibosa Crescente',  sym:'🌔', min:11.10, max:14.77,  demoHour: 265 },
+  { name:'Lua Cheia',         sym:'🌕', min:14.77, max:16.61,  demoHour: 355 },
+  { name:'Gibosa Minguante',  sym:'🌖', min:16.61, max:22.15,  demoHour: 445 },
+  { name:'Quarto Minguante',  sym:'🌗', min:22.15, max:25.84,  demoHour: 531 },
+  { name:'Minguante',         sym:'🌘', min:25.84, max:29.53,  demoHour: 621 },
 ];
 
 function currentPhase(age) { return PHASES.find(p=>age>=p.min&&age<p.max)||PHASES[0]; }
 
 function nextPhaseText(age) {
-  const ms=[{d:0,n:'Lua Nova'},{d:7.38,n:'Quarto Crescente'},{d:14.77,n:'Lua Cheia'},{d:22.15,n:'Quarto Minguante'},{d:29.53,n:'Lua Nova'}];
+  const ms=[
+    {d:0,    n:'Lua Nova'},
+    {d:7.38, n:'Quarto Crescente'},
+    {d:14.77,n:'Lua Cheia'},
+    {d:22.15,n:'Quarto Minguante'},
+    {d:29.53,n:'Lua Nova'}
+  ];
   for(const m of ms) if(age<m.d){ const r=m.d-age; return `Próxima: ${m.n} em ${r<1?'hoje':r.toFixed(1)+' dias'}`; }
   return '';
 }
 
 // ─────────────────────────────────────────────────────────────────
-// IMAGE CACHE
+// MOON IMAGE — set via <img src>, no fetch needed
 // ─────────────────────────────────────────────────────────────────
-const imgCache = {};
+function setMainMoon(date, hemi) {
+  const stage = document.querySelector('.moon-stage');
+  const placeholder = document.getElementById('moonPlaceholder');
 
-async function getMoonImg(date, id) {
-  const key = toDialaDate(date);
-  if (imgCache[key]) return imgCache[key];
-  try {
-    const url = await fetchMoonImage(date);
-    imgCache[key] = url;
-    return url;
-  } catch(e) {
-    return null;
+  const url = getNasaUrl(date, hemi);
+
+  // Reuse existing img or create new one
+  let img = stage.querySelector('.moon-img');
+  if (!img) {
+    img = document.createElement('img');
+    img.className = 'moon-img';
+    img.alt = 'Foto real da Lua · NASA/LRO';
+    stage.appendChild(img);
   }
+
+  img.style.display = 'none';
+  placeholder.style.display = 'flex';
+
+  img.onload = () => {
+    placeholder.style.display = 'none';
+    img.style.display = 'block';
+  };
+  img.onerror = () => {
+    // Fallback: try previous hour
+    const fallback = new Date(date.getTime() - 3600000);
+    img.src = getNasaUrl(fallback, hemi);
+  };
+  img.src = url;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STRIP — 8 mini moons with real NASA photos
+// ─────────────────────────────────────────────────────────────────
+function buildStrip(currentAge, hemi) {
+  const strip = document.getElementById('phasesStrip');
+  strip.innerHTML = '';
+
+  // Reference date: Jan 1 2026 00:00 UTC
+  const yearStart = new Date('2026-01-01T00:00:00Z');
+
+  PHASES.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'mini-phase' + (currentAge>=p.min && currentAge<p.max ? ' active' : '');
+
+    const img = document.createElement('img');
+    img.className = 'mini-moon';
+    img.alt = p.name;
+    img.title = p.name;
+
+    // Build a date that falls at this demoHour of 2026
+    const demoDate = new Date(yearStart.getTime() + (p.demoHour - 1) * 3600000);
+    img.src = getNasaUrl(demoDate, hemi);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'mini-label';
+    lbl.textContent = p.sym;
+    lbl.title = p.name;
+
+    div.appendChild(img);
+    div.appendChild(lbl);
+    strip.appendChild(div);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -180,7 +240,7 @@ function initStars() {
   let s = 0xABCD1234;
   const rng = () => { s=(s*1664525+1013904223)|0; return (s>>>0)/0xFFFFFFFF; };
   for(let i=0;i<200;i++){
-    ctx.beginPath(); ctx.arc(rng()*c.width,rng()*c.height,rng()*1.3,0,Math.PI*2);
+    ctx.beginPath(); ctx.arc(rng()*c.width, rng()*c.height, rng()*1.3, 0, Math.PI*2);
     ctx.fillStyle=`rgba(255,255,255,${(rng()*.7+.1).toFixed(2)})`; ctx.fill();
   }
 }
@@ -190,94 +250,15 @@ function initStars() {
 // ─────────────────────────────────────────────────────────────────
 let hemi = 'north';
 
-function makeImg(url, size, isSouth) {
-  const wrap = document.createElement('div');
-  wrap.className = 'mini-img-wrap' + (isSouth ? ' south' : '');
-  wrap.style.width = wrap.style.height = size + 'px';
-  const img = document.createElement('img');
-  img.width = img.height = size;
-  img.src = url;
-  img.style.borderRadius = '50%';
-  img.style.objectFit = 'cover';
-  img.style.display = 'block';
-  if (isSouth) img.style.transform = 'scaleX(-1)';
-  wrap.appendChild(img);
-  return wrap;
-}
-
-async function buildStrip(currentAge, h) {
-  const strip = document.getElementById('phasesStrip');
-  strip.innerHTML = '';
-
-  for (const p of PHASES) {
-    const div = document.createElement('div');
-    div.className = 'mini-phase' + (currentAge>=p.min&&currentAge<p.max?' active':'');
-
-    const wrap = document.createElement('div');
-    wrap.className = 'mini-img-wrap' + (h==='south'?' south':'');
-
-    // Placeholder
-    const placeholder = document.createElement('div');
-    placeholder.style.cssText = `width:30px;height:30px;border-radius:50%;background:#0a0a1a;display:flex;align-items:center;justify-content:center;font-size:14px;`;
-    placeholder.textContent = p.sym;
-    wrap.appendChild(placeholder);
-
-    const lbl = document.createElement('div');
-    lbl.className = 'mini-label';
-    lbl.textContent = p.sym;
-    lbl.title = p.name;
-
-    div.appendChild(wrap);
-    div.appendChild(lbl);
-    strip.appendChild(div);
-
-    // Load image async
-    const demoDate = getPhaseDate(p.demoAge);
-    getMoonImg(demoDate).then(url => {
-      if (!url) return;
-      wrap.innerHTML = '';
-      const img = document.createElement('img');
-      img.src = url;
-      img.width = img.height = 30;
-      img.style.cssText = 'border-radius:50%;object-fit:cover;display:block;width:30px;height:30px;';
-      if (h === 'south') img.style.transform = 'scaleX(-1)';
-      wrap.appendChild(img);
-    });
-  }
-}
-
-async function setMainMoon(date, h) {
-  const wrap = document.getElementById('mainMoonWrap');
-  // Show loading state
-  wrap.innerHTML = '<div class="moon-loading">🌕</div>';
-
-  const url = await getMoonImg(date);
-  if (!url) {
-    wrap.innerHTML = '<div class="moon-loading" style="opacity:.4">⚠️</div>';
-    return;
-  }
-
-  wrap.innerHTML = '';
-  wrap.className = 'moon-wrap' + (h==='south' ? ' south' : '');
-
-  const img = document.createElement('img');
-  img.src = url;
-  img.width = img.height = 160;
-  img.alt = 'Foto real da Lua · NASA';
-  img.style.cssText = 'border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 30px rgba(180,160,255,.25);';
-  if (h === 'south') img.style.transform = 'scaleX(-1)';
-  wrap.appendChild(img);
-}
-
 function setHemi(h) {
   hemi = h;
   document.getElementById('btnNorth').classList.toggle('active', h==='north');
   document.getElementById('btnSouth').classList.toggle('active', h==='south');
-  document.getElementById('hemiVal').textContent = h==='north'?'Norte':'Sul';
+  document.getElementById('hemiVal').textContent = h==='north' ? 'Norte' : 'Sul';
   update();
 }
 
-async function update() {
+function update() {
   const now = new Date();
   const { age, illum, dist } = getMoonData(now);
   const ph = currentPhase(age);
@@ -291,14 +272,13 @@ async function update() {
   document.getElementById('illumPct').textContent    = `${illum}%`;
   document.getElementById('moonDist').textContent    = `${(dist/1000).toFixed(0)}k km`;
 
-  // Load real NASA photo for current time
-  await setMainMoon(now, hemi);
+  setMainMoon(now, hemi);
   buildStrip(age, hemi);
 }
 
 initStars();
 update();
-setInterval(update, 3600000); // refresh hourly (NASA updates hourly)
+setInterval(update, 3600000);
 window.addEventListener('resize', initStars);
 </script>
 </body>
