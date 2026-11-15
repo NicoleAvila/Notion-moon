@@ -8,21 +8,21 @@
 <style>
   :root{--bg:#04040c;--border:rgba(180,160,240,0.1);--gold:#c8a55a;--silver:#c8d4f0;--muted:#5a5480;--text:#e0daf8;}
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{width:100%;height:100%;overflow:hidden;}
-  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);display:flex;align-items:flex-start;justify-content:center;}
+  html{overflow:hidden;}
+  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);width:100vw;overflow:hidden;}
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 
-  /* Wrapper ocupa o viewport e centraliza o widget escalado */
+  /* scale-root: posição absoluta para não causar scroll */
   #scale-root{
-    position:relative;z-index:1;
-    display:flex;align-items:flex-start;justify-content:center;
-    width:100%;
-    transform-origin:top center;
+    position:absolute;
+    top:0;left:0;
+    transform-origin:top left;
+    z-index:1;
   }
 
-  /* Widget sempre 360px — transform:scale() cuida do resto */
+  /* Widget sempre 360px — JS aplica scale no #scale-root */
   .widget{
-    width:360px;flex-shrink:0;
+    width:360px;
     background:linear-gradient(160deg,#09091a,#06060f);
     border:1px solid var(--border);
     border-radius:24px;
@@ -299,16 +299,23 @@ update();
 setInterval(update, 3600000);
 
 // Escala proporcional: widget base = 360px
+const BASE_W = 360;
 function scaleWidget() {
-  const root = document.getElementById('scale-root');
-  const available = window.innerWidth;
-  const BASE = 360;
-  const PADDING = 16; // margem mínima lateral total
-  const scale = Math.min(1, (available - PADDING) / BASE);
-  root.style.transform = `scale(${scale})`;
-  // Ajusta altura do body para evitar scroll
-  root.style.height = '';
-  document.body.style.height = (root.offsetHeight * scale) + 'px';
+  const root   = document.getElementById('scale-root');
+  const widget = root.querySelector('.widget');
+  const vw     = window.innerWidth;
+  const vh     = window.innerHeight;
+  const scale  = Math.min(1, vw / BASE_W);
+
+  // Aplica scale com origem top-left, depois desloca para centralizar
+  const scaledW = BASE_W * scale;
+  const offsetX = (vw - scaledW) / 2;
+  root.style.transform       = `translateX(${offsetX}px) scale(${scale})`;
+  root.style.transformOrigin = 'top left';
+
+  // Ajusta altura do body para caber o widget escalado sem scroll
+  const scaledH = widget.offsetHeight * scale;
+  document.body.style.height = scaledH + 'px';
 }
 scaleWidget();
 window.addEventListener('resize', () => { initStars(); scaleWidget(); });
