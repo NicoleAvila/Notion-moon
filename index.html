@@ -8,18 +8,37 @@
 <style>
   :root{--bg:#04040c;--border:rgba(180,160,240,0.1);--gold:#c8a55a;--silver:#c8d4f0;--muted:#5a5480;--text:#e0daf8;}
   *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  html,body{width:100%;height:100%;overflow:hidden;}
+  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);display:flex;align-items:flex-start;justify-content:center;}
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
-  .widget{position:relative;z-index:1;width:360px;background:linear-gradient(160deg,#09091a,#06060f);border:1px solid var(--border);border-radius:24px;padding:28px 22px 22px;box-shadow:0 8px 40px rgba(0,0,0,.7);}
+
+  /* Wrapper ocupa o viewport e centraliza o widget escalado */
+  #scale-root{
+    position:relative;z-index:1;
+    display:flex;align-items:flex-start;justify-content:center;
+    width:100%;
+    transform-origin:top center;
+  }
+
+  /* Widget sempre 360px — transform:scale() cuida do resto */
+  .widget{
+    width:360px;flex-shrink:0;
+    background:linear-gradient(160deg,#09091a,#06060f);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:28px 22px 22px;
+    box-shadow:0 8px 40px rgba(0,0,0,.7);
+  }
   .widget::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:55%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+
   .header{text-align:center;margin-bottom:18px;}
   .title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);}
   .current-date{font-size:13px;color:var(--muted);font-style:italic;margin-top:3px;}
+
   .hemi-toggle{display:flex;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:40px;padding:3px;gap:2px;margin-bottom:20px;}
   .hemi-btn{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 0;border-radius:36px;cursor:pointer;transition:all .3s;}
   .hemi-btn.active{background:linear-gradient(135deg,rgba(180,160,255,.18),rgba(100,80,200,.22));color:var(--silver);border:1px solid rgba(200,180,255,.2);}
 
-  /* Moon stage */
   .moon-stage{display:flex;justify-content:center;align-items:center;margin:4px 0 18px;position:relative;height:185px;}
   .moon-aura{position:absolute;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(200,180,255,.07),transparent 65%);animation:breathe 5s ease-in-out infinite;pointer-events:none;}
   @keyframes breathe{0%,100%{opacity:.6;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
@@ -27,19 +46,16 @@
   .moon-placeholder{width:160px;height:160px;border-radius:50%;background:#08081a;display:flex;align-items:center;justify-content:center;font-size:36px;animation:pulse 2s ease-in-out infinite;position:relative;z-index:2;}
   @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:.9;}}
 
-  /* Phase info */
   .phase-info{text-align:center;margin-bottom:18px;}
   .phase-name{font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:.1em;}
   .illumination{font-size:13px;color:var(--gold);margin-top:4px;font-style:italic;}
   .next-info{font-size:12px;color:var(--muted);margin-top:3px;}
 
-  /* Info grid */
   .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
   .info-card{background:rgba(255,255,255,.025);border:1px solid rgba(180,160,240,.08);border-radius:12px;padding:10px 12px;}
   .ic-label{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
   .ic-value{font-size:14px;color:var(--text);}
 
-  /* 8 phases strip */
   .phases-section{border-top:1px solid var(--border);padding-top:14px;}
   .phases-title{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px;}
   .phases-strip{display:flex;justify-content:space-between;align-items:flex-end;}
@@ -53,6 +69,7 @@
 </head>
 <body>
 <canvas id="stars"></canvas>
+<div id="scale-root">
 <div class="widget">
   <div class="header">
     <div class="title">☽ Fases da Lua ☾</div>
@@ -82,7 +99,8 @@
     <div class="phases-strip" id="phasesStrip"></div>
   </div>
   <div class="footer">Fotos reais: NASA/LRO · SVS #5587 / #5588</div>
-</div>
+</div><!-- .widget -->
+</div><!-- #scale-root -->
 
 <script>
 // ═══════════════════════════════════════════════════════
@@ -279,7 +297,21 @@ function update() {
 initStars();
 update();
 setInterval(update, 3600000);
-window.addEventListener('resize', initStars);
+
+// Escala proporcional: widget base = 360px
+function scaleWidget() {
+  const root = document.getElementById('scale-root');
+  const available = window.innerWidth;
+  const BASE = 360;
+  const PADDING = 16; // margem mínima lateral total
+  const scale = Math.min(1, (available - PADDING) / BASE);
+  root.style.transform = `scale(${scale})`;
+  // Ajusta altura do body para evitar scroll
+  root.style.height = '';
+  document.body.style.height = (root.offsetHeight * scale) + 'px';
+}
+scaleWidget();
+window.addEventListener('resize', () => { initStars(); scaleWidget(); });
 </script>
 </body>
 </html>
