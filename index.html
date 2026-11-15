@@ -8,20 +8,19 @@
 <style>
   :root{--bg:#04040c;--border:rgba(180,160,240,0.1);--gold:#c8a55a;--silver:#c8d4f0;--muted:#5a5480;--text:#e0daf8;}
   *{margin:0;padding:0;box-sizing:border-box;}
-  html{overflow:hidden;}
-  body{font-family:'Cormorant Garamond',Georgia,serif;background:var(--bg);color:var(--text);width:100vw;overflow:hidden;}
+  html,body{overflow:hidden;margin:0;padding:0;background:var(--bg);}
+  body{font-family:'Cormorant Garamond',Georgia,serif;color:var(--text);}
   #stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
 
-  /* scale-root: posição absoluta para não causar scroll */
   #scale-root{
-    position:absolute;
-    top:0;left:0;
-    transform-origin:top left;
+    display:block;
+    transform-origin:top center;
     z-index:1;
   }
 
   /* Widget sempre 360px — JS aplica scale no #scale-root */
   .widget{
+    position:relative;
     width:360px;
     background:linear-gradient(160deg,#09091a,#06060f);
     border:1px solid var(--border);
@@ -303,22 +302,25 @@ const BASE_W = 360;
 function scaleWidget() {
   const root   = document.getElementById('scale-root');
   const widget = root.querySelector('.widget');
-  const vw     = window.innerWidth;
-  const vh     = window.innerHeight;
+  const vw     = document.documentElement.clientWidth;
   const scale  = Math.min(1, vw / BASE_W);
 
-  // Aplica scale com origem top-left, depois desloca para centralizar
-  const scaledW = BASE_W * scale;
-  const offsetX = (vw - scaledW) / 2;
-  root.style.transform       = `translateX(${offsetX}px) scale(${scale})`;
+  // Centraliza: desloca para a direita pela metade da diferença
+  const offset = (vw - BASE_W * scale) / 2;
   root.style.transformOrigin = 'top left';
+  root.style.transform       = `translateX(${offset}px) scale(${scale})`;
+  root.style.width           = BASE_W + 'px';
 
-  // Ajusta altura do body para caber o widget escalado sem scroll
+  // Encurta o body para o tamanho real escalado (evita scroll vertical)
   const scaledH = widget.offsetHeight * scale;
-  document.body.style.height = scaledH + 'px';
+  document.body.style.minHeight = '0';
+  document.body.style.height    = scaledH + 'px';
 }
 scaleWidget();
-window.addEventListener('resize', () => { initStars(); scaleWidget(); });
+if (window.ResizeObserver) {
+  new ResizeObserver(() => { scaleWidget(); }).observe(document.documentElement);
+}
+window.addEventListener('resize', scaleWidget);
 </script>
 </body>
 </html>
